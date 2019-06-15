@@ -73,10 +73,15 @@
     @include media_larger_than_mobile { font-size: 1.125rem; }
   }
 }
+.skills-pills {
+  display: flex;
+  flex-wrap: wrap;
+}
 .tech-pill {
   padding: 5px;
   border: 1px solid #999;
   border-radius: 5px;
+  margin: 0 5px 5px 0;
 }
 .icon-links {
   margin: 0;
