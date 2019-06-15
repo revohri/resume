@@ -1,19 +1,16 @@
 # Jobs
-# VP of Global Communications
-- company: Springfield International Human Rights Outreach
-  position: VP of Global Communications
-  duration: Oct, 2013 &mdash; Present
-  summary: Write about your core competencies in one or two sentences describing your position. If you held the position for a long time, it could be a longer section, including a couple bullet points	<ul class="resume-item-list"><li>A project you are proud of</li><li>Another awesome project</li><li>or a team or department you worked with</li></ul>
+# Technical Lead, Groupon
+- company: Groupon Inc,  Chicago
+  position: Technical Lead
+  duration: Dec, 2018 &mdash; Present
+  summary: Managed day-to-day functioning of a highly agile team of 6 developers in consumer web product engineering. Owned the Sprint Planning process, built out new models for application ownership within the org along with piloting a knowledge sharing program to help un-silo teams and ramp up new engineers
+- company: ''
+  position: Software Development Engineer
+  duration: July, 2014 &mdash; Present
+  summary: Built A/B testable features for some of the highest traffic pages in Groupon’s web ecosystem - Home Page, Browsing & Search pages. Gained a lot of experience dealing with rapid product changes at scale, performance bottlenecks, rich UX, experimentation and tracking. Some key Projects<span>:</span> <ul class="resume-item-list"><li>Developed a rendering module to house business logic to figure out visual treatment of cards based on qualifying data from API. Expanded the usage of this module to all other major parts of Groupon’s web ecosystem.</li><li>Led the team’s efforts to meet engineering goals around driving down page latency. </li><li>Performed large scale refactors and cleanup on large codebases.</li><li>Merchandized Homepage, Date & Time based searching, New Mobile site and more</li></ul>
 
-# Director of Digital Stratgy
-- company: United Nations Human Rights Council
-  position: Director of Digital Strategy
-  duration:  Jun, 2010 &mdash; Sept, 2013
-  summary: If your stint was shorter, feel free to be brief and just call out the most meaningful points of your role. Be concise, and be meaninful. The person reading just needs enough to want to talk to you more about your experience.
-
-
-# Communications Coordinator
-- company: Springfield Women & Children's Center
-  position: Communications Coordinator
-  duration:   Jun, 2008  &mdash; May, 2010
-  summary: Led communication efforts across digital and traditional media channels for marketing and public relations, internal communication strategies, and coordinated support programs for the recipients of the center's services.
+# Intern
+- company: Oracle Inc, Redwood Shore
+  position: Intern
+  duration:   May, 2013  &mdash; July, 2013
+  summary: Built an Auditing framework for Oracle’s customer support portal
