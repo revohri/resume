@@ -1,3 +1,960 @@
----
-layout: resume
----
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Abnormal Library</title>
+<meta name="description" content="Abnormal Design Studio — a shelf of strange and lovely things. Pick one up.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Patrick+Hand&family=Rubik+Doodle+Shadow&family=Londrina+Outline:wght@400&family=Rampart+One&family=Bungee+Shade&family=Monoton&family=Fredericka+the+Great&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fbfaf5;
+    --paper-2: #f2efe4;
+    --ink: #1c1c1a;
+    --ink-soft: #6d6a61;
+    --mat: #1f7a5e;        /* the cutting mat the sketches were drawn on */
+    --mat-line: #d8cf45;
+    --stamp: #d8432c;
+    --card: #fffdf7;
+    --rule: #b9cde6;
+    --hand: "Gochi Hand", "Patrick Hand", "Comic Sans MS", cursive;
+    --body: "Patrick Hand", "Gochi Hand", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  :root[data-theme="night"] {
+    --paper: #12161b;
+    --paper-2: #1a2027;
+    --ink: #efe8d8;
+    --ink-soft: #9b968a;
+    --mat: #3fae8a;
+    --mat-line: #e6dc5a;
+    --stamp: #ff6b4f;
+    --card: #1b2129;
+    --rule: #2c3a4c;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 20px;
+    line-height: 1.35;
+    overflow-x: hidden;
+    transition: background .6s ease, color .6s ease;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* paper grain */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 0;
+    mix-blend-mode: multiply;
+  }
+  :root[data-theme="night"] body::before { mix-blend-mode: screen; opacity: .5; }
+
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  a { color: inherit; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 2px dashed var(--mat); outline-offset: 6px; border-radius: 6px; }
+
+  .page { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 0 0;
+    font-family: var(--hand); font-size: 18px; letter-spacing: .02em;
+  }
+  .topbar .studio { display: flex; gap: 10px; align-items: center; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mat); display: inline-block; animation: blink 2.4s infinite; }
+  @keyframes blink { 0%, 90%, 100% { opacity: 1 } 95% { opacity: .2 } }
+  .topbar .tools { display: flex; gap: 6px; }
+  .chip {
+    border: 1.5px solid var(--ink); border-radius: 999px;
+    padding: 4px 12px; font-family: var(--hand); font-size: 16px;
+    transition: background .2s, color .2s, transform .2s;
+  }
+  .chip:hover, .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); transform: rotate(-2deg); }
+
+  /* ---------- sky ---------- */
+  .sky { position: relative; height: 150px; margin-top: 8px; }
+  .sun {
+    position: absolute; left: 4%; top: 22px;
+    width: 54px; height: 54px;
+    transition: transform .8s cubic-bezier(.5,1.6,.4,1);
+  }
+  .sun:hover { transform: rotate(-25deg) scale(1.08); }
+  .sun svg { width: 100%; height: 100%; overflow: visible; }
+  .sun .rays { transform-origin: 27px 27px; animation: spin 22s linear infinite; opacity: 0; transition: opacity .4s; }
+  .sun:hover .rays { opacity: 1; }
+  .sun .moon-mask { transition: transform .8s cubic-bezier(.6,0,.3,1); transform: translateX(60px); }
+  :root[data-theme="night"] .sun .moon-mask { transform: translateX(14px); }
+  .sun .body { fill: transparent; transition: fill .6s; }
+  :root[data-theme="night"] .sun .body { fill: currentColor; }
+  :root[data-theme="night"] .sun .rays, :root[data-theme="night"] .sun .glint { opacity: 0 !important; }
+  .sun-hint {
+    position: absolute; left: calc(4% + 64px); top: 30px;
+    font-family: var(--hand); font-size: 15px; color: var(--ink-soft);
+    transform: rotate(-4deg); pointer-events: none;
+  }
+  .horizon { position: absolute; left: 0; right: 0; top: 70px; height: 80px; width: 100%; }
+  .birds { position: absolute; right: 2%; top: 74px; width: 200px; height: 30px; overflow: visible; }
+  .bird { animation: drift 14s ease-in-out infinite; }
+  .bird:nth-child(2) { animation-delay: -4s; animation-duration: 17s; }
+  .bird:nth-child(3) { animation-delay: -9s; animation-duration: 12s; }
+  @keyframes drift { 0%,100% { transform: translate(0,0) } 50% { transform: translate(-60px,-6px) } }
+  .stars { position: absolute; inset: 0; opacity: 0; transition: opacity 1s; pointer-events: none; }
+  :root[data-theme="night"] .stars { opacity: 1; }
+  .stars i { position: absolute; width: 3px; height: 3px; background: var(--ink); border-radius: 50%; animation: twinkle 3s infinite; }
+  @keyframes twinkle { 50% { opacity: .2; transform: scale(.6) } }
+
+  /* ---------- title ---------- */
+  .title-wrap { text-align: center; margin: -4px 0 6px; position: relative; }
+  h1.title {
+    font-family: var(--hand); font-weight: 400;
+    font-size: clamp(36px, 7vw, 74px); line-height: .98;
+    margin: 0; letter-spacing: .02em;
+  }
+  h1.title .line { display: block; }
+  h1.title .ch { display: inline-block; transition: transform .25s cubic-bezier(.5,2,.5,1); }
+  h1.title .ch:hover { transform: translateY(-10px) rotate(var(--r2, 8deg)); color: var(--mat); }
+  .tagline { font-family: var(--hand); color: var(--ink-soft); font-size: 20px; margin: 10px 0 0; }
+  .tagline .arrow { display: inline-block; animation: nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translateY(5px) } }
+
+  /* ---------- shelves ---------- */
+  .library { position: relative; margin: 26px auto 0; max-width: 1060px; }
+  .shelf { position: relative; padding: 0 3% 64px; margin-top: 30px; }
+  .shelf-items {
+    position: relative; z-index: 2;
+    display: flex; align-items: flex-end; justify-content: space-around; gap: 10px;
+    min-height: 150px;
+  }
+  .plank { position: absolute; left: 0; right: 0; height: 30px; bottom: 34px; width: 100%; z-index: 1; overflow: visible; }
+  .shelf.wonky .item { transform: rotate(var(--wonk, 0deg)) translateY(var(--wonky-y, 0px)); }
+
+  .item {
+    position: relative;
+    height: var(--h, 110px);
+    flex: 0 0 auto;
+    display: flex; align-items: flex-end; justify-content: center;
+    transform-origin: 50% 100%;
+    transition: transform .45s cubic-bezier(.4,1.8,.5,1);
+    margin-bottom: -2px;
+  }
+  .item .art { position: relative; height: 100%; display: block; }
+  .item .art img { height: 100%; width: auto; display: block; }
+  .item .art img.color {
+    position: absolute; inset: 0; opacity: 0;
+    transition: opacity .35s ease;
+    clip-path: circle(0% at 50% 100%);
+    transition: clip-path .5s ease, opacity .1s;
+  }
+  .item:hover .art img.color, .item:focus-visible .art img.color, .item.is-open .art img.color {
+    opacity: 1; clip-path: circle(150% at 50% 100%);
+  }
+  :root[data-theme="night"] .item .art img.line { filter: invert(.93) sepia(.15); }
+  .item:hover, .item:focus-visible { transform: translateY(-8px) rotate(var(--tilt, -3deg)); }
+  .item:hover .art, .item:focus-visible .art { animation: boil .36s steps(1) infinite; }
+  .item.is-open { transform: translateY(-26px) rotate(-6deg) scale(1.06); }
+  @keyframes boil {
+    0% { filter: url(#boil-0); }
+    33% { filter: url(#boil-1); }
+    66% { filter: url(#boil-2); }
+  }
+  .item:active { transform: translateY(-2px) scale(.96); transition-duration: .1s; }
+
+  /* handwritten label under the shelf, pointing up at its object */
+  .label {
+    position: absolute; left: 50%; top: calc(100% + 30px);
+    transform: translateX(-50%) rotate(var(--lr, -2deg));
+    white-space: nowrap; pointer-events: none;
+    font-family: var(--hand); font-size: 19px; line-height: 1;
+    transition: transform .3s cubic-bezier(.4,2,.5,1), color .2s;
+  }
+  .label::before {
+    content: "↑"; display: block; text-align: center; font-size: 15px; margin-bottom: 1px; color: var(--ink-soft);
+  }
+  .label small { display: block; font-size: 13px; color: var(--ink-soft); text-align: center; margin-top: 2px; }
+  .item:hover .label, .item:focus-visible .label { transform: translateX(-50%) translateY(-6px) rotate(calc(var(--lr, -2deg) * -1.5)); color: var(--mat); }
+  .item:hover .label { transition-delay: 0s; }
+  .item.deco .label { display: none; }
+
+  /* hand-written note bubble on hover */
+  .note {
+    position: absolute; bottom: calc(100% + 10px); left: 50%;
+    transform: translateX(-50%) translateY(6px) rotate(-3deg) scale(.9);
+    opacity: 0; pointer-events: none;
+    background: var(--card); border: 1.5px solid var(--ink); border-radius: 14px 18px 12px 16px;
+    padding: 4px 10px; font-family: var(--hand); font-size: 15px; white-space: nowrap;
+    transition: all .25s ease; z-index: 5;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .item:hover .note, .item:focus-visible .note { opacity: 1; transform: translateX(-50%) translateY(0) rotate(-3deg) scale(1); }
+
+  /* record */
+  .vinyl .disc { transform-origin: 50% 50%; transition: transform 1s ease-out; }
+  .vinyl:hover .disc, .vinyl.is-open .disc { animation: spin 1.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg) } }
+  .vinyl .label-ring { transition: fill .3s; }
+  .vinyl:hover .label-ring, .vinyl.is-open .label-ring { fill: var(--stamp); }
+  .vinyl svg { height: 100%; width: auto; display: block; overflow: visible; }
+
+  /* chameleon cycles through colour */
+  .chameleon:hover .art img.color, .chameleon.is-open .art img.color { animation: chroma 2.4s linear infinite; }
+  @keyframes chroma { to { filter: hue-rotate(360deg); } }
+  .chameleon .tongue {
+    position: absolute; left: 2%; top: 30%; height: 3px; width: 0; background: var(--stamp);
+    border-radius: 3px; transform-origin: right center; transform: translateX(-100%);
+    transition: width .15s ease-in; opacity: 0;
+  }
+  .chameleon.lick .tongue { opacity: 1; }
+  .chameleon .tongue::after { content: ""; position: absolute; left: -5px; top: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--stamp); }
+  .chameleon.lick .tongue { width: 70px; }
+
+  /* jar */
+  .jar .jar-label {
+    position: absolute; left: 0; right: 0; top: 46%; text-align: center;
+    font-family: var(--hand); font-size: 14px; letter-spacing: .06em; transform: rotate(-3deg);
+  }
+  .jar:hover .art { animation: boil .36s steps(1) infinite, jiggle .5s ease-in-out infinite; }
+  @keyframes jiggle { 25% { rotate: -4deg } 75% { rotate: 4deg } }
+  .slip {
+    position: absolute; left: 50%; bottom: 80%;
+    font-family: var(--hand); font-size: 14px; background: var(--card);
+    border: 1px solid var(--ink); padding: 0 6px; border-radius: 3px;
+    pointer-events: none; z-index: 6; white-space: nowrap;
+    animation: float-up 1.4s ease-out forwards;
+  }
+  @keyframes float-up {
+    from { transform: translate(-50%, 0) rotate(0); opacity: 1; }
+    to { transform: translate(calc(-50% + var(--dx)), -110px) rotate(var(--rot)); opacity: 0; }
+  }
+
+  /* tickets lean like in the sketch */
+  .tickets .art { transform: rotate(-58deg) translate(22px, -8px); transform-origin: 50% 100%; transition: transform .4s cubic-bezier(.4,2,.5,1); }
+  .tickets:hover .art { transform: rotate(-40deg) translate(18px, -10px); }
+  .tickets .stub {
+    position: absolute; right: -6px; top: 34%; font-family: var(--hand); font-size: 12px; transform: rotate(-58deg);
+  }
+
+  /* coffee steam */
+  .cup .steam { position: absolute; left: 22%; bottom: 78%; width: 46%; height: 70%; overflow: visible; pointer-events: none; }
+  .cup .steam path { stroke: var(--ink); stroke-width: 2; fill: none; stroke-linecap: round; stroke-dasharray: 40; animation: steam 2.6s linear infinite; opacity: .7; }
+  .cup .steam path:nth-child(2) { animation-delay: -.9s; }
+  .cup .steam path:nth-child(3) { animation-delay: -1.7s; }
+  .cup:hover .steam path { animation-duration: 1.1s; }
+  @keyframes steam {
+    0% { stroke-dashoffset: 40; transform: translateY(8px); opacity: 0; }
+    30% { opacity: .8; }
+    100% { stroke-dashoffset: -40; transform: translateY(-10px); opacity: 0; }
+  }
+
+  /* frame hangs crooked; hovering straightens it (designers can't help it) */
+  .frame { --tilt: 0deg; }
+  .frame .art { transform: rotate(7deg); transition: transform .5s cubic-bezier(.4,2,.5,1); transform-origin: 50% 100%; }
+  .frame:hover .art, .frame.is-open .art { transform: rotate(0); }
+
+  .plant .art { transform-origin: 50% 100%; transition: transform .6s cubic-bezier(.4,2,.4,1); }
+  .plant .art { transform: scale(var(--grow, 1)); }
+  .books:hover .art { animation: none; }
+  .books.toppled .art { transform: rotate(-90deg) translate(-8px, -14px); transition: transform .6s cubic-bezier(.6,-0.4,.4,1.6); }
+  .books .art { transition: transform .6s cubic-bezier(.6,-0.4,.4,1.6); transform-origin: 0 100%; }
+
+  /* ---------- wordmark ---------- */
+  .wordmark { text-align: center; margin: 40px 0 6px; user-select: none; }
+  .wordmark .big {
+    display: inline-flex; flex-wrap: nowrap;
+    font-size: clamp(54px, 15vw, 190px); line-height: 1;
+    font-family: "Rubik Doodle Shadow", var(--hand);
+  }
+  .wordmark .big span {
+    display: inline-block; min-width: .5em; cursor: pointer;
+    transition: transform .3s cubic-bezier(.4,2,.5,1);
+  }
+  .wordmark .big span:hover { transform: translateY(-6px) rotate(-6deg); color: var(--mat); }
+  .wordmark .underline { display: block; width: min(700px, 80%); height: 14px; margin: 0 auto; overflow: visible; }
+  .wordmark p { font-family: var(--hand); color: var(--ink-soft); font-size: 17px; margin: 8px 0 0; }
+
+  /* ---------- ticker ---------- */
+  .ticker {
+    margin: 56px 0 0; border-block: 1.5px solid var(--ink); overflow: hidden; white-space: nowrap;
+    font-family: var(--hand); font-size: 22px; padding: 10px 0; background: var(--mat); color: #fffbe6;
+    position: relative; z-index: 1;
+    background-image:
+      linear-gradient(var(--mat-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+  }
+  .ticker .track { display: inline-block; animation: tick 36s linear infinite; padding-left: 100%; }
+  .ticker:hover .track { animation-play-state: paused; }
+  .ticker span { margin: 0 22px; text-shadow: 0 0 6px var(--mat), 0 0 2px var(--mat); }
+  @keyframes tick { to { transform: translateX(-100%); } }
+
+  footer {
+    position: relative; z-index: 1;
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;
+    max-width: 1180px; margin: 0 auto; padding: 20px 16px 40px;
+    font-family: var(--hand); font-size: 15px; color: var(--ink-soft);
+  }
+
+  /* ---------- library card (the "page" for each object) ---------- */
+  dialog.card {
+    border: 0; padding: 0; background: transparent; color: var(--ink);
+    width: min(720px, calc(100vw - 32px)); max-height: calc(100dvh - 40px);
+    overflow: visible; padding-top: 18px;
+  }
+  dialog.card::backdrop { background: rgba(20, 22, 18, .35); backdrop-filter: blur(2px); }
+  dialog.card[open] .sheet, dialog.card[open] .close { animation: pull-out .55s cubic-bezier(.3,1.4,.5,1); }
+  dialog.card.closing .sheet, dialog.card.closing .close { animation: put-back .3s ease-in forwards; }
+  @keyframes pull-out { from { transform: translateY(70px) rotate(4deg) scale(.9); opacity: 0; } }
+  @keyframes put-back { to { transform: translateY(80px) rotate(-5deg) scale(.9); opacity: 0; } }
+  .sheet {
+    position: relative; background: var(--card);
+    border: 1.5px solid var(--ink); border-radius: 6px;
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 26px 26px 26px 64px;
+    max-height: calc(100dvh - 60px); overflow: auto;
+    background-image:
+      linear-gradient(90deg, transparent 46px, var(--stamp) 46px, var(--stamp) 47.5px, transparent 47.5px),
+      repeating-linear-gradient(transparent 0 33px, var(--rule) 33px 34px);
+    background-position: 0 0, 0 22px;
+  }
+  .sheet .meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--hand); font-size: 15px; color: var(--ink-soft); }
+  .sheet h2 { font-family: var(--hand); font-weight: 400; font-size: clamp(34px, 6vw, 50px); margin: 4px 0 6px; line-height: 1; }
+  .sheet h3 { font-family: var(--hand); font-weight: 400; font-size: 24px; margin: 18px 0 4px; }
+  .sheet p { margin: 0 0 12px; }
+  .sheet ul { padding-left: 18px; margin: 0 0 12px; }
+  .stamp {
+    position: absolute; right: 22px; top: 54px;
+    border: 2.5px solid var(--stamp); color: var(--stamp); border-radius: 6px;
+    padding: 2px 10px; font-family: "Rampart One", var(--hand); font-size: 15px; letter-spacing: .05em;
+    transform: rotate(9deg); opacity: .85; text-align: center; line-height: 1.15;
+    animation: thunk .4s .35s cubic-bezier(.2,2,.5,1) both;
+    pointer-events: none;
+  }
+  @keyframes thunk { from { transform: rotate(9deg) scale(2.2); opacity: 0; } }
+  .close {
+    position: absolute; top: 0; right: -8px;
+    background: var(--paper); border: 1.5px solid var(--ink); border-radius: 999px;
+    padding: 4px 14px; font-family: var(--hand); font-size: 17px;
+    box-shadow: 3px 3px 0 var(--ink); z-index: 2;
+    transition: transform .2s;
+  }
+  .close:hover { transform: rotate(-4deg) translateY(-2px); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-top: 12px; }
+  .project {
+    border: 1.5px solid var(--ink); border-radius: 4px; background: var(--paper);
+    overflow: hidden; transition: transform .3s cubic-bezier(.4,2,.5,1), box-shadow .3s;
+    text-decoration: none; display: block;
+  }
+  .project:hover { transform: rotate(-1.5deg) translateY(-4px); box-shadow: 5px 5px 0 var(--ink); }
+  .project .thumb { aspect-ratio: 4/3; position: relative; overflow: hidden; border-bottom: 1.5px solid var(--ink); }
+  .project .cap { padding: 6px 10px 8px; font-size: 17px; line-height: 1.15; }
+  .project .cap small { display: block; color: var(--ink-soft); font-size: 14px; }
+
+  .tracklist { list-style: none; padding: 0 !important; counter-reset: t; }
+  .tracklist li { display: flex; gap: 10px; align-items: baseline; padding: 2px 0; }
+  .tracklist li::before { counter-increment: t; content: "A" counter(t); font-family: var(--hand); color: var(--stamp); width: 26px; }
+  .tracklist li .dots { flex: 1; border-bottom: 2px dotted var(--ink-soft); transform: translateY(-5px); }
+  .services { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0 !important; }
+  .services li {
+    border: 1.5px solid var(--ink); border-radius: 999px; padding: 4px 14px; background: var(--paper);
+    transition: background .25s, color .25s, transform .25s;
+  }
+  .services li:hover { background: var(--c, var(--mat)); color: #fff; transform: rotate(-3deg); }
+  .slips { display: grid; gap: 12px; margin-top: 10px; }
+  .slips blockquote {
+    margin: 0; background: var(--paper); border: 1.5px solid var(--ink); padding: 10px 14px;
+    transform: rotate(var(--r, -1deg)); font-family: var(--hand); font-size: 21px;
+  }
+  .slips blockquote cite { display: block; font-size: 15px; color: var(--ink-soft); font-style: normal; margin-top: 4px; }
+  .ticket {
+    display: flex; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--paper); margin-bottom: 12px; overflow: hidden;
+  }
+  .ticket .main { padding: 10px 14px; flex: 1; }
+  .ticket .main b { font-family: var(--hand); font-weight: 400; font-size: 23px; display: block; }
+  .ticket .tear { border-left: 2px dashed var(--ink); padding: 10px 12px; writing-mode: vertical-rl; font-family: var(--hand); background: var(--mat); color: #fffbe6; }
+  form.coffee { display: grid; gap: 10px; margin-top: 10px; }
+  form.coffee label { font-family: var(--hand); font-size: 18px; }
+  form.coffee input, form.coffee textarea {
+    width: 100%; font: inherit; color: var(--ink); background: transparent;
+    border: 0; border-bottom: 2px solid var(--ink); padding: 4px 2px; border-radius: 0;
+  }
+  form.coffee textarea { min-height: 70px; resize: vertical; border: 2px solid var(--ink); border-radius: 4px; }
+  .btn {
+    justify-self: start; background: var(--ink); color: var(--paper);
+    border-radius: 999px; padding: 8px 20px; font-family: var(--hand); font-size: 20px;
+    box-shadow: 4px 4px 0 var(--mat); transition: transform .2s, box-shadow .2s;
+  }
+  .btn:hover { transform: translate(-2px, -2px) rotate(-2deg); box-shadow: 6px 6px 0 var(--mat); }
+
+  /* ---------- doodle layer ---------- */
+  #doodle { position: fixed; inset: 0; z-index: 40; pointer-events: none; touch-action: none; }
+  body.doodling #doodle { pointer-events: auto; cursor: crosshair; }
+  .doodle-bar {
+    position: fixed; right: 16px; bottom: 16px; z-index: 41; display: flex; gap: 6px;
+    background: var(--paper); border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .doodle-bar .chip { border-width: 0; }
+  .doodle-bar .clear { display: none; }
+  body.doodling .doodle-bar .clear { display: inline-block; }
+  .toast {
+    position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%) translateY(20px) rotate(-2deg);
+    background: var(--ink); color: var(--paper); padding: 8px 16px; border-radius: 10px;
+    font-family: var(--hand); font-size: 18px; opacity: 0; transition: all .3s; z-index: 60; pointer-events: none;
+    max-width: calc(100vw - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) rotate(-2deg); }
+
+  /* ink splat from the cursor on click */
+  .splat { position: fixed; pointer-events: none; z-index: 70; width: 36px; height: 36px; margin: -18px 0 0 -18px; animation: splat .6s ease-out forwards; }
+  @keyframes splat { from { transform: scale(.2); opacity: 1 } to { transform: scale(1.4); opacity: 0 } }
+
+  /* intro: the shelf draws itself in */
+  .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.4s .2s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .item { animation: drop-in .7s cubic-bezier(.3,1.6,.5,1) backwards; animation-delay: calc(.5s + var(--i, 0) * .08s); }
+  @keyframes drop-in { from { transform: translateY(-60px) rotate(-8deg); opacity: 0; } }
+
+  @media (max-width: 700px) {
+    body { font-size: 18px; }
+    .sky { height: 120px; }
+    .horizon { top: 60px; }
+    .birds { width: 120px; top: 60px; }
+    .sun-hint { display: none; }
+    .shelf-items { justify-content: space-evenly; min-height: 120px; }
+    .label { font-size: 17px; }
+    .sheet { padding: 22px 18px 22px 48px; box-shadow: 5px 5px 0 var(--ink);
+      background-image:
+        linear-gradient(90deg, transparent 34px, var(--stamp) 34px, var(--stamp) 35.5px, transparent 35.5px),
+        repeating-linear-gradient(transparent 0 33px, var(--rule) 33px 34px); }
+    .stamp { top: auto; bottom: 18px; right: 14px; font-size: 12px; }
+    .topbar .tools .hide-sm { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- three slightly different displacement maps, cycled to make lines "boil" like hand-drawn animation -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="boil-0"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="1"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+  <filter id="boil-1"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+  <filter id="boil-2"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="13"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+</svg>
+
+<div class="page">
+  <header class="topbar">
+    <div class="studio"><span class="dot"></span> abnormal design studio</div>
+    <nav class="tools" aria-label="Page tools">
+      <button class="chip hide-sm" id="wonky" aria-pressed="false">make it wonky</button>
+      <button class="chip" id="night" aria-pressed="false">lights off</button>
+    </nav>
+  </header>
+
+  <section class="sky" aria-hidden="false">
+    <div class="stars" id="stars"></div>
+    <button class="sun" id="sun" aria-label="Toggle day and night">
+      <svg viewBox="0 0 54 54">
+        <defs>
+          <mask id="moon">
+            <rect x="-20" y="-20" width="100" height="100" fill="#fff"/>
+            <circle class="moon-mask" cx="27" cy="20" r="22" fill="#000"/>
+          </mask>
+        </defs>
+        <g class="rays" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M27 -6v6M27 54v6M-6 27h6M54 27h6M4 4l4 4M46 46l4 4M4 50l4-4M46 8l4-4"/>
+        </g>
+        <g mask="url(#moon)">
+          <circle class="body" cx="27" cy="27" r="22" stroke="currentColor" stroke-width="2.4"/>
+          <path class="glint" d="M14 18c4-6 14-9 22-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </button>
+    <span class="sun-hint">← tap the sun</span>
+    <svg class="horizon" viewBox="0 0 1000 80" preserveAspectRatio="none" aria-hidden="true">
+      <path class="draw" pathLength="1" d="M10 12 C 250 10, 520 16, 990 22" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path class="draw" pathLength="1" d="M14 30 C 300 30, 640 40, 995 46" fill="none" stroke="currentColor" stroke-width="2" style="animation-delay:.5s"/>
+    </svg>
+    <svg class="birds" viewBox="0 0 200 30" aria-hidden="true">
+      <g class="bird"><path d="M10 10 h22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></g>
+      <g class="bird"><path d="M70 12 h26" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></g>
+      <g class="bird"><path d="M150 18 h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></g>
+    </svg>
+  </section>
+
+  <div class="title-wrap">
+    <h1 class="title" id="title"><span class="line">The</span><span class="line">Abnormal</span><span class="line">Library</span></h1>
+    <p class="tagline">a shelf of strange &amp; lovely things — pick one up <span class="arrow">↓</span></p>
+  </div>
+
+  <main class="library" id="library" aria-label="The shelf — each object opens a section">
+    <!-- shelves are built by script so the objects can re-stack on small screens -->
+  </main>
+  <noscript>
+    <p style="text-align:center">Sections: Work · Studio · Services · Journal · Talks · Contact</p>
+  </noscript>
+
+  <section class="wordmark" aria-label="Abnormal wordmark">
+    <div class="big" id="wordmark" title="click a letter to re-letter it"></div>
+    <svg class="underline" viewBox="0 0 700 14" preserveAspectRatio="none" aria-hidden="true">
+      <path class="draw" pathLength="1" d="M4 8 C 180 4, 420 12, 696 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+    <p>hover a letter. click it. we never could settle on one lettering either.</p>
+  </section>
+</div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="track">
+    <span>✦ brand identity</span><span>✦ packaging</span><span>✦ illustration</span><span>✦ editorial</span>
+    <span>✦ type that misbehaves</span><span>✦ spaces &amp; signage</span><span>✦ websites with a sense of humour</span>
+    <span>✦ now booking new projects</span><span>✦ normal is overrated</span>
+  </div>
+</div>
+
+<footer>
+  <span>© Abnormal Design Studio · sample landing page</span>
+  <span>object art: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0) — placeholders until the studio draws its own</span>
+</footer>
+
+<canvas id="doodle" aria-hidden="true"></canvas>
+<div class="doodle-bar">
+  <button class="chip" id="doodleBtn" aria-pressed="false">✎ doodle</button>
+  <button class="chip clear" id="clearBtn">erase</button>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog class="card" id="card" aria-labelledby="cardTitle">
+  <button class="close" id="closeCard">put it back ✕</button>
+  <div class="sheet">
+    <div class="stamp" id="stamp"></div>
+    <div class="meta"><span id="cardShelf"></span><span id="cardNo"></span></div>
+    <div id="cardBody"></div>
+  </div>
+</dialog>
+
+<!-- ================= section content ================= -->
+<template id="t-work">
+  <h2 id="cardTitle">Selected Work</h2>
+  <p>A few things we've made lately. (Placeholder frames — swap in real case studies.)</p>
+  <div class="grid">
+    <a class="project" href="#"><div class="thumb" style="background:#f4c542"><svg viewBox="0 0 120 90" width="100%" height="100%"><circle cx="40" cy="45" r="24" fill="#1c1c1a"/><rect x="62" y="22" width="34" height="46" fill="#d8432c" transform="rotate(8 79 45)"/></svg></div><div class="cap">Identity for a neighbourhood café<small>branding · signage</small></div></a>
+    <a class="project" href="#"><div class="thumb" style="background:#1f7a5e"><svg viewBox="0 0 120 90" width="100%" height="100%"><path d="M20 70 Q60 0 100 70" fill="none" stroke="#fffbe6" stroke-width="8"/><circle cx="60" cy="58" r="8" fill="#f4c542"/></svg></div><div class="cap">Spice tin packaging<small>packaging · illustration</small></div></a>
+    <a class="project" href="#"><div class="thumb" style="background:#e9e2d0"><svg viewBox="0 0 120 90" width="100%" height="100%"><text x="14" y="62" font-family="Rubik Doodle Shadow" font-size="44">Aa</text><path d="M80 20 l20 50 M100 20 l-20 50" stroke="#d8432c" stroke-width="5"/></svg></div><div class="cap">A typeface that refuses to behave<small>type design</small></div></a>
+    <a class="project" href="#"><div class="thumb" style="background:#d8432c"><svg viewBox="0 0 120 90" width="100%" height="100%"><rect x="30" y="14" width="60" height="64" fill="#fffbe6"/><path d="M38 30h44M38 40h44M38 50h28" stroke="#1c1c1a" stroke-width="3"/></svg></div><div class="cap">Annual report, but fun<small>editorial · print</small></div></a>
+    <a class="project" href="#"><div class="thumb" style="background:#9fc6e8"><svg viewBox="0 0 120 90" width="100%" height="100%"><rect x="18" y="18" width="84" height="54" rx="6" fill="#fffbe6" stroke="#1c1c1a" stroke-width="3"/><circle cx="34" cy="30" r="4" fill="#d8432c"/><path d="M30 56 q15 -18 30 0 t30 0" fill="none" stroke="#1f7a5e" stroke-width="4"/></svg></div><div class="cap">Website for a children's museum<small>digital · illustration</small></div></a>
+    <a class="project" href="#"><div class="thumb" style="background:#1c1c1a"><svg viewBox="0 0 120 90" width="100%" height="100%"><circle cx="60" cy="45" r="28" fill="none" stroke="#f4c542" stroke-width="3" stroke-dasharray="6 6"/><text x="60" y="52" text-anchor="middle" fill="#fffbe6" font-family="Gochi Hand" font-size="20">pop-up</text></svg></div><div class="cap">Pop-up store, one weekend only<small>spaces · signage</small></div></a>
+  </div>
+</template>
+
+<template id="t-studio">
+  <h2 id="cardTitle">Side A: The Studio</h2>
+  <p>Abnormal Design Studio is a small, curious practice led by co-founders <b>Ravia Ohri</b> and <b>Sanyaa Mehrotra</b>. We make brands, books, packaging and places for people who'd rather be remembered than blend in.</p>
+  <p>(Placeholder copy — the studio's own words go here.)</p>
+  <h3>On repeat in the studio</h3>
+  <ul class="tracklist">
+    <li>Draw it badly first <span class="dots"></span> 2:14</li>
+    <li>Ask one more weird question <span class="dots"></span> 3:01</li>
+    <li>Make it by hand, then make it work <span class="dots"></span> 4:20</li>
+    <li>Normal is a starting point <span class="dots"></span> 1:59</li>
+    <li>Ship it, then celebrate <span class="dots"></span> 2:47</li>
+  </ul>
+</template>
+
+<template id="t-services">
+  <h2 id="cardTitle">What we do</h2>
+  <p>Like the chameleon, we take on the colours of whoever we work with — and stay a little bit strange underneath.</p>
+  <ul class="services">
+    <li style="--c:#d8432c">Brand identity</li>
+    <li style="--c:#1f7a5e">Packaging</li>
+    <li style="--c:#c99a12">Illustration</li>
+    <li style="--c:#3b6fb6">Editorial &amp; print</li>
+    <li style="--c:#8c4bb3">Websites &amp; digital</li>
+    <li style="--c:#d8432c">Type &amp; lettering</li>
+    <li style="--c:#1f7a5e">Spaces &amp; signage</li>
+    <li style="--c:#3b6fb6">Art direction</li>
+  </ul>
+  <h3>How it usually goes</h3>
+  <p>Coffee → a lot of questions → sketchbook chaos → three good ideas → one great one → done properly.</p>
+</template>
+
+<template id="t-journal">
+  <h2 id="cardTitle">The Idea Jar</h2>
+  <p>Scraps, notes and half-thoughts we keep in a jar on the shelf. Shake it for more.</p>
+  <div class="slips" id="slips"></div>
+</template>
+
+<template id="t-talks">
+  <h2 id="cardTitle">Talks &amp; Tickets</h2>
+  <div class="ticket"><div class="main"><b>Inside Abnormal Design Studio</b>Podcast — the co-founders on their journey and how they think about design.</div><div class="tear">ADMIT ONE</div></div>
+  <div class="ticket"><div class="main"><b>Sketchbook Sundays</b>Workshop — bring a pen, leave with a weirder sketchbook. (Sample event.)</div><div class="tear">ADMIT ONE</div></div>
+  <div class="ticket"><div class="main"><b>Brand Therapy</b>A talk on making brands that feel human. (Sample event.)</div><div class="tear">ADMIT ONE</div></div>
+</template>
+
+<template id="t-contact">
+  <h2 id="cardTitle">Come for coffee</h2>
+  <p>Got a project, a question or a strange idea? Tell us about it — we'll put the kettle on.</p>
+  <form class="coffee" id="coffeeForm">
+    <label>Your name<input name="name" required autocomplete="name"></label>
+    <label>Email<input name="email" type="email" required autocomplete="email"></label>
+    <label>What are we making?<textarea name="msg" required></textarea></label>
+    <button class="btn" type="submit">send it ☕</button>
+  </form>
+  <p style="margin-top:14px">or write to <a href="mailto:hello@abnormaldesignstudio.com">hello@abnormaldesignstudio.com</a></p>
+</template>
+
+<script>
+(() => {
+  const ART = 'art/';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- the objects on the shelf (they are the navigation) ----------
+  const ITEMS = [
+    { id: 'books',  deco: true,  img: '1F4DA', h: 70, note: 'careful…' },
+    { id: 'frame',  section: 'work',     label: 'work',     sub: 'selected projects', img: '1F5BC', h: 104, note: 'ugh, it’s crooked', tilt: '2deg' },
+    { id: 'vinyl',  section: 'studio',   label: 'studio',   sub: 'side A: about us',  vinyl: true, h: 128, note: 'now playing: us' },
+    { id: 'chameleon', section: 'services', label: 'services', sub: 'we adapt',      img: '1F98E', h: 52, note: 'any colour you like' },
+    { id: 'jar',    section: 'journal',  label: 'journal',  sub: 'the idea jar',      img: '1FAD9', h: 118, note: 'shake me' },
+    { id: 'tickets', section: 'talks',   label: 'talks',    sub: 'podcast & events',  img: '1F39F', h: 66, note: 'admit one' },
+    { id: 'cup',    section: 'contact',  label: 'contact',  sub: 'come for coffee',   img: '2615',  h: 66, note: 'it’s still warm' },
+    { id: 'plant',  deco: true,  img: '1FAB4', h: 96, note: 'water me' },
+  ];
+  const SECTIONS = {
+    work:    { shelf: 'shelf A · frames',     no: 'No. 001' },
+    studio:  { shelf: 'shelf A · records',    no: 'No. 002' },
+    services:{ shelf: 'shelf A · creatures',  no: 'No. 003' },
+    journal: { shelf: 'shelf A · jars',       no: 'No. 004' },
+    talks:   { shelf: 'shelf A · tickets',    no: 'No. 005' },
+    contact: { shelf: 'shelf A · crockery',   no: 'No. 006' },
+  };
+
+  const vinylSVG = `
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <g class="disc">
+        <circle cx="60" cy="60" r="56" fill="currentColor"/>
+        ${[48, 42, 36, 30].map(r => `<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--paper)" stroke-opacity=".28" stroke-width="1" stroke-dasharray="${r % 12 ? '60 8' : '30 6 4 6'}"/>`).join('')}
+        <path d="M24 34 A44 44 0 0 1 52 18" stroke="var(--paper)" stroke-opacity=".55" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle class="label-ring" cx="60" cy="60" r="20" fill="var(--paper)"/>
+        <text x="60" y="56" text-anchor="middle" font-family="Gochi Hand" font-size="8" fill="currentColor">ABNORMAL</text>
+        <text x="60" y="68" text-anchor="middle" font-family="Gochi Hand" font-size="7" fill="currentColor">side A</text>
+        <circle cx="60" cy="60" r="2.5" fill="currentColor"/>
+      </g>
+    </svg>`;
+
+  function itemHTML(it, i) {
+    let art;
+    if (it.vinyl) art = vinylSVG;
+    else art = `<img class="line" src="${ART}${it.img}-line.svg" alt=""><img class="color" src="${ART}${it.img}-color.svg" alt="">`;
+    let extra = '';
+    if (it.id === 'jar') extra = '<span class="jar-label">IDEAS</span>';
+    if (it.id === 'chameleon') extra = '<span class="tongue"></span>';
+    if (it.id === 'cup') extra = `<svg class="steam" viewBox="0 0 30 40"><path d="M6 38c-4-6 4-10 0-16s4-10 0-16"/><path d="M15 38c-4-6 4-10 0-16s4-10 0-16"/><path d="M24 38c-4-6 4-10 0-16s4-10 0-16"/></svg>`;
+    const tag = it.deco ? 'div' : 'button';
+    const attrs = it.deco
+      ? `role="img" aria-label="${it.id === 'books' ? 'a stack of books' : 'a potted plant'}"`
+      : `type="button" aria-haspopup="dialog" aria-label="${it.label} — ${it.sub}"`;
+    const lr = ((i * 37) % 7 - 3) + 'deg';
+    return `<${tag} class="item ${it.id} ${it.deco ? 'deco' : ''} ${it.vinyl ? 'vinyl' : ''}" data-id="${it.id}" ${attrs}
+              style="--h:${it.h}px; --i:${i}; --lr:${lr}; ${it.tilt ? `--tilt:${it.tilt};` : ''}">
+              <span class="art">${art}${extra}</span>
+              <span class="note">${it.note}</span>
+              ${it.deco ? '' : `<span class="label">${it.label}<small>${it.sub}</small></span>`}
+            </${tag}>`;
+  }
+
+  // hand-drawn plank: wobbly double line + hatching, like the sketch
+  function plankSVG(seed) {
+    let s = seed;
+    const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const j = (n) => (rnd() - .5) * n;
+    const top = `M0 ${8 + j(2)} C 250 ${7 + j(3)}, 600 ${9 + j(3)}, 1000 ${8 + j(2)}`;
+    const bot = `M2 ${22 + j(2)} C 300 ${23 + j(3)}, 700 ${21 + j(3)}, 998 ${24 + j(2)}`;
+    let hatch = '';
+    for (let x = 6; x < 985; x += 9 + rnd() * 9) {
+      if (rnd() < .18) continue; // gaps make it look drawn
+      hatch += `M${x.toFixed(1)} ${21 + j(2)} L${(x + 10 + j(4)).toFixed(1)} ${9 + j(2)} `;
+    }
+    return `<svg class="plank" viewBox="0 0 1000 30" preserveAspectRatio="none" aria-hidden="true">
+      <path class="draw" pathLength="1" d="${top}" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path class="draw" pathLength="1" d="${bot}" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" style="animation-delay:.4s"/>
+      <path d="${hatch}" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".7"/>
+      <path d="M0 8 L0 22 M1000 8 L998 24" stroke="currentColor" stroke-width="2.2"/>
+    </svg>`;
+  }
+
+  const library = document.getElementById('library');
+  let perShelf = 0;
+  function buildShelves() {
+    const w = innerWidth;
+    const n = w < 520 ? 3 : w < 860 ? 4 : ITEMS.length;
+    if (n === perShelf) return;
+    perShelf = n;
+    let html = '';
+    for (let i = 0; i < ITEMS.length; i += n) {
+      const row = ITEMS.slice(i, i + n);
+      html += `<div class="shelf">${plankSVG(i + 11)}<div class="shelf-items">${row.map((it, k) => itemHTML(it, i + k)).join('')}</div></div>`;
+    }
+    library.innerHTML = html;
+    // shrink the objects a touch on small screens
+    const scale = w < 520 ? .78 : w < 860 ? .9 : 1;
+    library.querySelectorAll('.item').forEach(el => {
+      const it = ITEMS.find(x => x.id === el.dataset.id);
+      el.style.setProperty('--h', Math.round(it.h * scale) + 'px');
+    });
+    wireItems();
+  }
+
+  // ---------- object behaviours ----------
+  function wireItems() {
+    library.querySelectorAll('button.item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const it = ITEMS.find(x => x.id === btn.dataset.id);
+        if (it.id === 'jar') shakeJar(btn, 5);
+        if (it.id === 'chameleon') { btn.classList.add('lick'); setTimeout(() => btn.classList.remove('lick'), 260); }
+        openCard(it.section, btn);
+      });
+    });
+    const jar = library.querySelector('.jar');
+    jar.addEventListener('mouseenter', () => shakeJar(jar, 2));
+    const cham = library.querySelector('.chameleon');
+    cham.addEventListener('mouseenter', () => { cham.classList.add('lick'); setTimeout(() => cham.classList.remove('lick'), 260); });
+
+    const books = library.querySelector('.books');
+    books.addEventListener('click', () => {
+      books.classList.toggle('toppled');
+      toast(books.classList.contains('toppled') ? 'oops. the books fell over.' : 'fixed it. nobody saw.');
+    });
+    let grow = 1;
+    const plant = library.querySelector('.plant');
+    plant.addEventListener('click', () => {
+      grow = grow >= 1.5 ? 1 : +(grow + .12).toFixed(2);
+      plant.style.setProperty('--grow', grow);
+      toast(grow === 1 ? 'pruned. back to normal(ish).' : 'thanks for the water 🌱');
+    });
+  }
+
+  const IDEAS = ['weird', 'bold', 'kinder', 'louder', 'by hand', 'more pink', 'why not?', 'tiny type', 'a chameleon?', 'make it move'];
+  function shakeJar(jar, count) {
+    if (reduceMotion) return;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const s = document.createElement('span');
+        s.className = 'slip';
+        s.textContent = IDEAS[Math.floor(Math.random() * IDEAS.length)];
+        s.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+        s.style.setProperty('--rot', (Math.random() * 60 - 30) + 'deg');
+        jar.appendChild(s);
+        setTimeout(() => s.remove(), 1500);
+      }, i * 120);
+    }
+  }
+
+  // ---------- library card dialog ----------
+  const card = document.getElementById('card');
+  const body = document.getElementById('cardBody');
+  let opener = null;
+  function openCard(section, btn) {
+    opener = btn;
+    btn.classList.add('is-open');
+    const meta = SECTIONS[section];
+    document.getElementById('cardShelf').textContent = meta.shelf;
+    document.getElementById('cardNo').textContent = meta.no;
+    const due = new Date(Date.now() + 14 * 864e5);
+    document.getElementById('stamp').innerHTML = `CHECKED OUT<br>${due.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}`;
+    body.innerHTML = '';
+    body.appendChild(document.getElementById('t-' + section).content.cloneNode(true));
+    if (section === 'journal') fillSlips();
+    if (section === 'contact') wireForm();
+    card.classList.remove('closing');
+    card.showModal();
+    card.querySelector('.sheet').scrollTop = 0;
+    history.replaceState(null, '', '#' + section);
+  }
+  function closeCard() {
+    if (!card.open) return;
+    card.classList.add('closing');
+    setTimeout(() => {
+      card.close();
+      card.classList.remove('closing');
+    }, reduceMotion ? 0 : 280);
+  }
+  card.addEventListener('close', () => {
+    if (opener) { opener.classList.remove('is-open'); opener.focus({ preventScroll: true }); }
+    history.replaceState(null, '', location.pathname);
+  });
+  card.addEventListener('cancel', e => { e.preventDefault(); closeCard(); });
+  document.getElementById('closeCard').addEventListener('click', closeCard);
+  card.addEventListener('click', e => { if (e.target === card) closeCard(); });
+
+  const NOTES = [
+    ['A logo is a promise you can fit on a button.', 'scribbled on a receipt'],
+    ['Draw the ugly version first. It’s usually hiding the good one.', 'back of a train ticket'],
+    ['What if the website was a shelf?', 'this page, apparently'],
+    ['Clients don’t want normal. They just think they do.', 'sticky note, slightly coffee-stained'],
+    ['Colour is a mood you can measure.', 'margin of a sketchbook'],
+    ['Make it weird, then make it work.', 'studio wall'],
+  ];
+  function fillSlips() {
+    const box = document.getElementById('slips');
+    const picks = NOTES.slice().sort(() => Math.random() - .5).slice(0, 3);
+    box.innerHTML = picks.map(([q, c]) => `<blockquote style="--r:${(Math.random() * 3 - 1.5).toFixed(1)}deg">“${q}”<cite>— ${c}</cite></blockquote>`).join('')
+      + `<button class="btn" id="shake" type="button">shake the jar again</button>`;
+    document.getElementById('shake').addEventListener('click', fillSlips);
+  }
+  function wireForm() {
+    document.getElementById('coffeeForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const r = e.target.querySelector('.btn').getBoundingClientRect();
+      for (let i = 0; i < 10; i++) setTimeout(() => splat(r.left + Math.random() * r.width, r.top + Math.random() * r.height), i * 50);
+      e.target.innerHTML = '<p style="font-family:var(--hand);font-size:26px">Got it — kettle’s on. ☕<br><small style="font-size:16px;color:var(--ink-soft)">(demo form: nothing was actually sent)</small></p>';
+    });
+  }
+
+  // ---------- title: letters drawn slightly off, like hand lettering ----------
+  document.querySelectorAll('#title .line').forEach(line => {
+    line.innerHTML = [...line.textContent.toUpperCase()].map(c => {
+      const r = (Math.random() * 6 - 3).toFixed(1);
+      const y = (Math.random() * 4 - 2).toFixed(1);
+      return `<span class="ch" style="transform:rotate(${r}deg) translateY(${y}px); --r2:${(Math.random() * 20 - 10).toFixed(0)}deg">${c}</span>`;
+    }).join('');
+  });
+
+  // ---------- ABNORMAL wordmark: every letter can be re-lettered ----------
+  const FONTS = ['Rubik Doodle Shadow', 'Londrina Outline', 'Rampart One', 'Bungee Shade', 'Monoton', 'Fredericka the Great', 'Gochi Hand'];
+  const wm = document.getElementById('wordmark');
+  wm.innerHTML = [...'ABNORMAL'].map((c, i) => `<span data-f="${i % 2 ? 1 : 0}" role="button" tabindex="0" aria-label="re-letter ${c}">${c}</span>`).join('');
+  wm.querySelectorAll('span').forEach(s => {
+    s.style.fontFamily = `"${FONTS[+s.dataset.f]}"`;
+    const swap = () => {
+      s.dataset.f = (+s.dataset.f + 1 + Math.floor(Math.random() * (FONTS.length - 1))) % FONTS.length;
+      s.style.fontFamily = `"${FONTS[s.dataset.f]}"`;
+    };
+    s.addEventListener('click', swap);
+    s.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swap(); } });
+  });
+
+  // ---------- day / night ----------
+  const root = document.documentElement;
+  const nightBtn = document.getElementById('night');
+  function setNight(on, quiet) {
+    root.dataset.theme = on ? 'night' : 'day';
+    nightBtn.setAttribute('aria-pressed', on);
+    nightBtn.textContent = on ? 'lights on' : 'lights off';
+    if (!quiet) toast(on ? 'the library after hours ✦' : 'good morning ☀');
+  }
+  setNight(matchMedia('(prefers-color-scheme: dark)').matches, true);
+  nightBtn.addEventListener('click', () => setNight(root.dataset.theme !== 'night'));
+  document.getElementById('sun').addEventListener('click', () => setNight(root.dataset.theme !== 'night'));
+  const stars = document.getElementById('stars');
+  stars.innerHTML = Array.from({ length: 26 }, () =>
+    `<i style="left:${Math.random() * 100}%;top:${Math.random() * 60}%;animation-delay:${-Math.random() * 3}s"></i>`).join('');
+
+  // ---------- make it wonky (also triggered by typing "abnormal") ----------
+  const wonkyBtn = document.getElementById('wonky');
+  function wonky(on) {
+    document.querySelectorAll('.shelf').forEach(sh => sh.classList.toggle('wonky', on));
+    document.querySelectorAll('.item').forEach(el => {
+      el.style.setProperty('--wonk', on ? (Math.random() * 30 - 15).toFixed(1) + 'deg' : '0deg');
+      el.style.setProperty('--wonky-y', on ? (Math.random() * -14).toFixed(0) + 'px' : '0px');
+    });
+    wonkyBtn.setAttribute('aria-pressed', on);
+    wonkyBtn.textContent = on ? 'okay, normal' : 'make it wonky';
+  }
+  wonkyBtn.addEventListener('click', () => wonky(wonkyBtn.getAttribute('aria-pressed') !== 'true'));
+  let typed = '';
+  addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea')) return;
+    typed = (typed + e.key.toLowerCase()).slice(-8);
+    if (typed === 'abnormal') { wonky(true); toast('everything is abnormal now.'); }
+  });
+
+  // ---------- doodle mode: draw on the page like a sketchbook ----------
+  const cv = document.getElementById('doodle');
+  const ctx = cv.getContext('2d');
+  const doodleBtn = document.getElementById('doodleBtn');
+  function sizeCanvas() {
+    const snap = document.createElement('canvas');
+    snap.width = cv.width; snap.height = cv.height;
+    if (cv.width) snap.getContext('2d').drawImage(cv, 0, 0);
+    const dpr = devicePixelRatio || 1;
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.drawImage(snap, 0, 0, snap.width / dpr, snap.height / dpr);
+  }
+  sizeCanvas();
+  let drawing = false, last = null;
+  cv.addEventListener('pointerdown', e => { drawing = true; last = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const [x0, y0] = last, x1 = e.clientX, y1 = e.clientY;
+    const v = Math.hypot(x1 - x0, y1 - y0);
+    ctx.strokeStyle = getComputedStyle(root).getPropertyValue('--ink');
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(1.2, 4 - v * .08); // faster = thinner, like a real pen
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    last = [x1, y1];
+  });
+  addEventListener('pointerup', () => { drawing = false; });
+  doodleBtn.addEventListener('click', () => {
+    const on = !document.body.classList.contains('doodling');
+    document.body.classList.toggle('doodling', on);
+    doodleBtn.setAttribute('aria-pressed', on);
+    doodleBtn.textContent = on ? '✓ done' : '✎ doodle';
+    if (on) toast('go on, draw on our page');
+  });
+  document.getElementById('clearBtn').addEventListener('click', () => ctx.clearRect(0, 0, cv.width, cv.height));
+
+  // ---------- small things ----------
+  const toastEl = document.getElementById('toast');
+  let tt;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(tt);
+    tt = setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+  function splat(x, y) {
+    if (reduceMotion) return;
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 36 36');
+    s.classList.add('splat');
+    s.style.left = x + 'px'; s.style.top = y + 'px';
+    const pts = Array.from({ length: 6 }, (_, i) => {
+      const a = i / 6 * Math.PI * 2 + Math.random();
+      const r = 8 + Math.random() * 9;
+      return `<circle cx="${18 + Math.cos(a) * r}" cy="${18 + Math.sin(a) * r}" r="${1 + Math.random() * 2}" fill="var(--mat)"/>`;
+    }).join('');
+    s.innerHTML = pts;
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 650);
+  }
+  addEventListener('pointerdown', e => {
+    if (!document.body.classList.contains('doodling') && e.target.closest('button, .wordmark span')) splat(e.clientX, e.clientY);
+  });
+
+  buildShelves();
+  let rz;
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { buildShelves(); sizeCanvas(); }, 150); });
+
+  // deep link: /abnormal/#contact opens the coffee card
+  const hash = location.hash.slice(1);
+  const fromHash = ITEMS.find(it => it.section === hash);
+  if (fromHash) setTimeout(() => openCard(hash, library.querySelector('.' + fromHash.id)), 900);
+})();
+</script>
+</body>
+</html>
