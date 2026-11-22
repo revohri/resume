@@ -1,0 +1,603 @@
+<title>Kyoto Walk Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one narrow column built for a phone held while walking. "Now speaking" sticks to the top, big tap targets below. */
+  :root {
+    --paper: #f2f3f0;
+    --card: #ffffff;
+    --ink: #1d2230;
+    --muted: #5d6474;
+    --line: #d9dce2;
+    --indigo: #2d4373;
+    --indigo-soft: #e3e8f3;
+    --kaki: #c2552d;
+    --moss: #4f6b3a;
+    --display: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+    --body: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12151c; --card: #1b202a; --ink: #e8eaf0; --muted: #9aa1b2; --line: #2c3240;
+      --indigo: #9db3e6; --indigo-soft: #232c40; --kaki: #ec8a63; --moss: #9cbf7f; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #12151c; --card: #1b202a; --ink: #e8eaf0; --muted: #9aa1b2; --line: #2c3240;
+    --indigo: #9db3e6; --indigo-soft: #232c40; --kaki: #ec8a63; --moss: #9cbf7f; color-scheme: dark;
+  }
+  body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+  .wrap { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px 48px; display: grid; gap: 18px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: 1.35rem; margin: 0; letter-spacing: 0.01em; }
+  h1 small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); letter-spacing: 0.02em; }
+  h2 { font-family: var(--display); font-size: 1.05rem; margin: 0; text-wrap: balance; }
+  .label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .pill { font-family: var(--mono); font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .pill.ok { color: var(--moss); border-color: currentColor; }
+  .pill.bad { color: var(--kaki); border-color: currentColor; }
+
+  .now { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; box-shadow: 0 6px 18px -14px rgba(0,0,0,.5); }
+  .now-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--line); margin-right: 6px; vertical-align: middle; }
+  .live-dot.on { background: var(--kaki); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .live-dot.on { animation: none; } }
+  .now-text { max-height: 34vh; overflow-y: auto; color: var(--ink); font-size: 1rem; }
+  .now-text span.cur { background: var(--indigo-soft); border-radius: 4px; box-shadow: 0 0 0 2px var(--indigo-soft); }
+  .now-text .ask { color: var(--indigo); font-weight: 500; }
+  .empty { color: var(--muted); }
+
+  section.block { display: grid; gap: 10px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row > * { min-width: 0; }
+  button { font: inherit; font-weight: 500; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 11px 14px; min-height: 46px; cursor: pointer; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--indigo); outline-offset: 2px; }
+  button.primary { background: var(--indigo); border-color: var(--indigo); color: var(--paper); }
+  button.warn { color: var(--kaki); border-color: var(--kaki); }
+  button.big { width: 100%; font-size: 1.05rem; min-height: 56px; }
+  button:disabled { opacity: .5; cursor: default; }
+  input, textarea, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 46px; }
+  textarea { width: 100%; resize: vertical; min-height: 70px; box-sizing: border-box; }
+  input[type="text"] { flex: 1 1 160px; }
+  .hint { font-size: 0.85rem; color: var(--muted); margin: 0; }
+
+  .queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .queue li { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
+  .queue .q { min-width: 0; overflow-wrap: anywhere; }
+  .queue .who { font-weight: 500; }
+  .st { font-family: var(--mono); font-size: 0.68rem; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
+  .st.queued { color: var(--muted); } .st.answering { color: var(--kaki); } .st.answered { color: var(--moss); } .st.skipped { color: var(--muted); }
+
+  .guide { border: 1px dashed var(--indigo); border-radius: 14px; padding: 14px; display: grid; gap: 12px; }
+  .switch { display: flex; gap: 10px; align-items: center; }
+  .switch input { width: 22px; height: 22px; min-height: 0; accent-color: var(--indigo); }
+  .stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .stops li { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); }
+  .stops li.current { border-color: var(--indigo); box-shadow: inset 4px 0 0 var(--indigo); }
+  .stops li.done .sname { color: var(--muted); }
+  .stops li.done .sname::after { content: " ✓"; color: var(--moss); }
+  .sname { font-weight: 500; }
+  .sjp { font-size: 0.8rem; color: var(--muted); margin-left: 6px; }
+  .stops button { min-height: 40px; padding: 8px 12px; font-size: 0.9rem; }
+
+  details { border-top: 1px solid var(--line); padding-top: 8px; }
+  summary { cursor: pointer; font-weight: 500; min-height: 32px; }
+  .hist { display: grid; gap: 10px; margin-top: 8px; }
+  .hist article { display: grid; gap: 4px; }
+  .hist p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--paper); padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; max-width: calc(100% - 32px); z-index: 20; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Kyoto Walk Guide<small>Nijō Castle → Gion → Kiyomizu-dera</small></h1>
+    <span id="conn" class="pill">Connecting…</span>
+  </header>
+
+  <section class="now" aria-live="polite">
+    <div class="now-head">
+      <span class="label"><span id="dot" class="live-dot"></span><span id="nowLabel">Now</span></span>
+      <div class="row">
+        <button id="replayBtn" type="button" hidden>Replay</button>
+        <button id="muteBtn" type="button" hidden>Mute</button>
+      </div>
+    </div>
+    <h2 id="nowTitle">Waiting for the guide</h2>
+    <div id="nowText" class="now-text empty">When the guide starts, the story appears here and plays in your headphones.</div>
+  </section>
+
+  <section class="block" id="listen">
+    <button id="audioBtn" class="big primary" type="button">Turn on audio</button>
+    <p class="hint" id="audioHint">Keep this screen on during the walk. Locking the phone stops the audio.</p>
+    <div class="row">
+      <label class="label" for="voiceSel">Voice</label>
+      <select id="voiceSel" style="flex:1 1 180px"></select>
+      <label class="label" for="rateSel">Speed</label>
+      <select id="rateSel">
+        <option value="0.9">Slow</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.1">Brisk</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="block" id="ask">
+    <h2>Ask the guide</h2>
+    <div class="row">
+      <label class="label" for="nameIn">Your name</label>
+      <input id="nameIn" type="text" placeholder="e.g. Priya" maxlength="24" autocomplete="given-name">
+    </div>
+    <textarea id="qIn" placeholder="Why do the lanterns say…? Tap the mic on your keyboard to speak." maxlength="400"></textarea>
+    <button id="askBtn" class="primary" type="button">Send question</button>
+    <ul id="queue" class="queue"></ul>
+  </section>
+
+  <section class="guide" id="guide" hidden>
+    <div class="row" style="justify-content:space-between">
+      <h2>Guide controls</h2>
+      <label class="switch" for="brainSw"><input id="brainSw" type="checkbox"> This phone runs the guide</label>
+    </div>
+    <p class="hint" id="brainHint">Turn this on for one phone only. That phone asks Claude and sends the story to everyone.</p>
+    <div id="brainUi" hidden style="display:grid;gap:12px">
+      <div class="row">
+        <button id="moreBtn" type="button">Tell us more</button>
+        <button id="legBtn" type="button">Walking to next stop</button>
+        <button id="stopBtn" class="warn" type="button">Stop talking</button>
+      </div>
+      <div class="row">
+        <input id="placeIn" type="text" placeholder="Somewhere else? e.g. the red gate on our left">
+        <button id="placeBtn" type="button">Go</button>
+      </div>
+      <div class="row">
+        <label class="switch" for="autoSw"><input id="autoSw" type="checkbox" checked> Answer questions automatically</label>
+        <label class="switch" for="shortSw"><input id="shortSw" type="checkbox"> Shorter stories</label>
+      </div>
+      <ul id="stops" class="stops"></ul>
+      <button id="clearBtn" type="button">Clear answered questions</button>
+    </div>
+  </section>
+
+  <details id="histBox">
+    <summary>Earlier on the walk</summary>
+    <div id="hist" class="hist"><p>Nothing yet.</p></div>
+  </details>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(() => {
+  const ROUTE = [
+    { id: "nijo-castle", name: "Nijō Castle", say: "Nijo Castle", jp: "二条城",
+      points: ["Built by Tokugawa Ieyasu in 1603 as the shogun's Kyoto residence, a show of power beside the emperor's court",
+               "Nightingale floors in Ninomaru Palace squeak to expose intruders",
+               "In 1867 the last shogun announced the return of power to the emperor here"],
+      heads: ["No photos inside Ninomaru Palace, and shoes come off"],
+      leg: "about 2 km east along Oike or Sanjo street, or the Tozai subway from Nijojo-mae to Kyoto Shiyakusho-mae" },
+    { id: "nishiki-market", name: "Nishiki Market", say: "Nishiki Market", jp: "錦市場",
+      points: ["Called Kyoto's kitchen, a food street for roughly 400 years", "Kyoto pickles, yuba, dashimaki tamago, knife makers like Aritsugu"],
+      heads: ["Many stalls ask you to eat at the stall, not while walking"],
+      leg: "a few minutes east, across Kawaramachi, into the narrow Pontocho alley" },
+    { id: "pontocho", name: "Pontochō", say: "Pontocho", jp: "先斗町",
+      points: ["One of Kyoto's five geisha districts, squeezed between Kiyamachi and the Kamo River", "Summer dining platforms called kawayuka over the river", "The plover crest on the lanterns"],
+      heads: ["Teahouses are private; don't photograph geiko or maiko without consent"],
+      leg: "south to Shijo street, then east across the Kamo River on the Shijo bridge" },
+    { id: "minamiza", name: "Shijō Ōhashi & Minami-za", say: "the Shijo bridge and Minamiza theatre", jp: "南座",
+      points: ["Izumo no Okuni is said to have started kabuki on this riverbed around 1603", "Minamiza is regarded as Japan's oldest kabuki theatre site", "December kaomise performances with name boards on the facade"],
+      heads: [],
+      leg: "a short walk into Gion: north to the Shirakawa canal, then back down Hanamikoji" },
+    { id: "gion", name: "Gion: Shirakawa & Hanamikōji", say: "Gion, Shirakawa and Hanamikoji", jp: "祇園",
+      points: ["Geiko and maiko, and the ochaya teahouse system", "Tatsumi Bridge and the willow-lined Shirakawa canal", "Ichiriki Chaya on the corner of Hanamikoji and its link to the 47 Ronin story"],
+      heads: ["Photography is banned on some private lanes off Hanamikoji and fines can apply", "Never block, follow or touch maiko"],
+      leg: "east along Shijo street to the big vermilion gate at the end" },
+    { id: "yasaka", name: "Yasaka Shrine & Maruyama Park", say: "Yasaka Shrine and Maruyama Park", jp: "八坂神社",
+      points: ["Home shrine of the Gion Matsuri, held every July for over a thousand years", "The vermilion west gate facing Shijo street", "Maruyama Park's giant weeping cherry"],
+      heads: [],
+      leg: "south through Maruyama Park onto the stone-paved Nene-no-michi" },
+    { id: "kodaiji", name: "Nene-no-michi & Kōdai-ji", say: "Nene-no-michi and Kodaiji", jp: "高台寺",
+      points: ["Founded by Nene in memory of her husband Toyotomi Hideyoshi, who unified Japan", "Nene-no-michi, the lane named for her", "Seasonal night illuminations"],
+      heads: [],
+      leg: "via the quiet Ishibe-koji alley, down to Ninenzaka and the Yasaka pagoda" },
+    { id: "sannenzaka", name: "Yasaka Pagoda, Ninenzaka & Sannenzaka", say: "the Yasaka pagoda, Ninenzaka and Sannenzaka", jp: "三年坂",
+      points: ["Hokanji's five-storey Yasaka Pagoda", "Preserved machiya townhouses along the slopes", "The legend that tripping on Sannenzaka brings three years of bad luck, and the gourd charms against it"],
+      heads: ["Very crowded; regroup at the top of Sannenzaka"],
+      leg: "uphill on Kiyomizu-zaka to the temple gate" },
+    { id: "kiyomizu", name: "Kiyomizu-dera", say: "Kiyomizu-dera", jp: "清水寺",
+      points: ["Founded in 778; the present main hall dates from 1633", "The tall wooden stage built without nails", "To jump off the stage at Kiyomizu is a Japanese idiom for taking a bold leap", "Otowa waterfall: three streams for longevity, success or love; drink from only one"],
+      heads: [],
+      leg: "" },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+  let db = null, sample = null, user = null, canEdit = false;
+  let state = { current: null, currentStopId: null, covered: [] };
+  let history = [];
+  let questions = [];
+
+  // ---------- toast ----------
+  let toastT;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 4200); }
+
+  // ---------- speech (each phone speaks the text itself) ----------
+  const synth = window.speechSynthesis || null;
+  let voices = [];
+  let audioOn = false, muted = false, playingId = null, spokenIdx = 0;
+  let quietAt = 0;
+
+  function loadVoices() {
+    if (!synth) return;
+    const all = synth.getVoices();
+    voices = all.filter((v) => /^en/i.test(v.lang));
+    const rank = (v) => (/(premium|enhanced|natural|neural)/i.test(v.name) ? 0 : /google|samantha|daniel|karen|serena|ava|zoe/i.test(v.name) ? 1 : 2);
+    voices.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+    const sel = $("voiceSel"); const saved = lsGet("voice", "");
+    sel.textContent = "";
+    voices.forEach((v) => { const o = document.createElement("option"); o.value = v.voiceURI; o.textContent = `${v.name} (${v.lang})`; sel.appendChild(o); });
+    if (saved && voices.some((v) => v.voiceURI === saved)) sel.value = saved;
+  }
+  if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+  else { $("audioBtn").disabled = true; $("audioHint").textContent = "This browser can't read text aloud. Open the link in Safari or Chrome."; }
+  $("rateSel").value = lsGet("rate", "1");
+  $("voiceSel").onchange = (e) => lsSet("voice", e.target.value);
+  $("rateSel").onchange = (e) => lsSet("rate", e.target.value);
+
+  function speak(text, idx, nid) {
+    if (!synth || muted) return;
+    const u = new SpeechSynthesisUtterance(text);
+    const v = voices.find((x) => x.voiceURI === $("voiceSel").value);
+    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = "en-US"; }
+    u.rate = parseFloat($("rateSel").value) || 1;
+    u.onstart = () => markSpoken(nid, idx);
+    synth.speak(u);
+  }
+  function markSpoken(nid, idx) {
+    if (!state.current || state.current.id !== nid) return;
+    document.querySelectorAll("#nowText span.cur").forEach((s) => s.classList.remove("cur"));
+    const s = document.querySelector(`#nowText span[data-i="${idx}"]`);
+    if (s) { s.classList.add("cur"); s.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  }
+  function playCurrent() {
+    const cur = state.current;
+    if (!audioOn || !cur) return;
+    if (cur.id !== playingId) { synth.cancel(); playingId = cur.id; spokenIdx = 0; }
+    if (cur.stopped) { synth.cancel(); spokenIdx = cur.sentences.length; return; }
+    while (spokenIdx < cur.sentences.length) { speak(cur.sentences[spokenIdx], spokenIdx, cur.id); spokenIdx++; }
+  }
+
+  let wakeLock = null;
+  async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
+  document.addEventListener("visibilitychange", () => { if (audioOn && document.visibilityState === "visible") keepAwake(); });
+
+  $("audioBtn").onclick = () => {
+    if (!synth) return;
+    if (!audioOn) {
+      // Speaking inside the tap unlocks audio on iPhone.
+      const u = new SpeechSynthesisUtterance("Audio is on. You'll hear the guide here.");
+      const v = voices.find((x) => x.voiceURI === $("voiceSel").value); if (v) { u.voice = v; u.lang = v.lang; }
+      synth.speak(u);
+      audioOn = true;
+      // Join at the live point so everyone stays in sync.
+      playingId = state.current?.id ?? null; spokenIdx = state.current?.sentences?.length ?? 0;
+      keepAwake();
+    } else { audioOn = false; synth.cancel(); }
+    renderAudio();
+  };
+  $("muteBtn").onclick = () => { muted = !muted; if (muted) synth?.cancel(); renderAudio(); };
+  $("replayBtn").onclick = () => {
+    if (!synth || !state.current) return;
+    if (!audioOn) { audioOn = true; keepAwake(); }
+    muted = false; synth.cancel(); playingId = state.current.id; spokenIdx = 0; playCurrent(); renderAudio();
+  };
+  function renderAudio() {
+    $("audioBtn").textContent = audioOn ? "Audio on · tap to turn off" : "Turn on audio";
+    $("audioBtn").classList.toggle("primary", !audioOn);
+    $("muteBtn").hidden = !audioOn; $("muteBtn").textContent = muted ? "Unmute" : "Mute";
+  }
+
+  // ---------- rendering ----------
+  function renderNow() {
+    const cur = state.current;
+    const live = cur && !cur.done && !cur.stopped;
+    $("dot").classList.toggle("on", !!live);
+    $("replayBtn").hidden = !cur || !cur.sentences?.length;
+    if (!cur) return;
+    $("nowLabel").textContent = live ? (cur.sentences.length ? "Speaking" : "Thinking…") : cur.stopped ? "Stopped" : "Last story";
+    $("nowTitle").textContent = cur.title || "The guide";
+    const box = $("nowText"); box.classList.remove("empty"); box.textContent = "";
+    if (!cur.sentences.length) { box.textContent = "The guide is gathering its thoughts…"; box.classList.add("empty"); return; }
+    cur.sentences.forEach((s, i) => {
+      const sp = document.createElement("span"); sp.dataset.i = i; sp.textContent = s + " ";
+      if (i === 0 && cur.kind === "answer") sp.classList.add("ask");
+      box.appendChild(sp);
+    });
+  }
+  function renderQueue() {
+    const ul = $("queue"); ul.textContent = "";
+    const shown = questions.filter((q) => q.status !== "answered" || Date.now() - (q.at || 0) < 30 * 60e3).slice(-8);
+    shown.forEach((q) => {
+      const li = document.createElement("li");
+      const left = document.createElement("div"); left.className = "q";
+      const who = document.createElement("span"); who.className = "who"; who.textContent = (q.name || "Someone") + ": ";
+      const tx = document.createElement("span"); tx.textContent = q.text;
+      left.append(who, tx);
+      const right = document.createElement("div"); right.className = "row";
+      const st = document.createElement("span"); st.className = "st " + q.status; st.textContent = q.status;
+      right.appendChild(st);
+      if (isBrain() && q.status === "queued") {
+        const go = document.createElement("button"); go.type = "button"; go.textContent = "Answer"; go.style.minHeight = "34px"; go.style.padding = "4px 10px";
+        go.onclick = () => answer(q);
+        const sk = document.createElement("button"); sk.type = "button"; sk.textContent = "Skip"; sk.style.minHeight = "34px"; sk.style.padding = "4px 10px";
+        sk.onclick = () => db.doc("questions/" + q.id).update({ status: "skipped" }).catch(() => toast("Couldn't skip that question."));
+        right.append(go, sk);
+      }
+      li.append(left, right); ul.appendChild(li);
+    });
+  }
+  function renderHistory() {
+    const box = $("hist"); box.textContent = "";
+    if (!history.length) { const p = document.createElement("p"); p.textContent = "Nothing yet."; box.appendChild(p); return; }
+    [...history].reverse().forEach((h) => {
+      const a = document.createElement("article");
+      const t = document.createElement("strong"); t.textContent = h.title;
+      const p = document.createElement("p"); p.textContent = h.text;
+      a.append(t, p); box.appendChild(a);
+    });
+  }
+  function renderStops() {
+    const ul = $("stops"); ul.textContent = "";
+    ROUTE.forEach((s) => {
+      const li = document.createElement("li");
+      if (state.covered?.includes(s.id)) li.classList.add("done");
+      if (state.currentStopId === s.id) li.classList.add("current");
+      const n = document.createElement("div");
+      const nm = document.createElement("span"); nm.className = "sname"; nm.textContent = s.name;
+      const jp = document.createElement("span"); jp.className = "sjp"; jp.lang = "ja"; jp.textContent = s.jp;
+      n.append(nm, jp);
+      const b = document.createElement("button"); b.type = "button"; b.textContent = prepared[s.id] ? "We're here ⚡" : "We're here";
+      b.onclick = () => arrive(s);
+      li.append(n, b); ul.appendChild(li);
+    });
+  }
+
+  // ---------- guide brain (one phone) ----------
+  const deviceBrain = () => lsGet("brain", "0") === "1";
+  const isBrain = () => canEdit && deviceBrain() && !!sample && !!db;
+  let busy = false, ctl = null, live = null;
+  const prepared = {};       // stopId -> narration text prepared ahead
+  const preparing = {};
+
+  let writing = false, dirty = false;
+  async function pushState() {
+    dirty = true; if (writing) return; writing = true;
+    while (dirty) {
+      dirty = false;
+      try {
+        await db.doc("tour/state").set({
+          current: live ? { ...live, sentences: [...live.sentences] } : null,
+          currentStopId: state.currentStopId ?? null,
+          covered: state.covered ?? [],
+        });
+      } catch (e) { toast("Couldn't reach the group. Check your signal."); break; }
+    }
+    writing = false;
+  }
+
+  function splitSentences(text, final) {
+    const clean = text.replace(/[*#_`>]/g, "").replace(/\s+/g, " ").trim();
+    const parts = clean.split(/(?<=[.!?])\s+(?=[A-Z"'“‘(])/);
+    if (!final) parts.pop();
+    return parts.map((s) => s.trim()).filter(Boolean);
+  }
+
+  function tokyoNow() {
+    return new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo", weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+  function recap() {
+    if (!history.length) return "nothing yet; this is the start of the walk";
+    return history.slice(-10).map((h) => `${h.title}: ${h.text.slice(0, 160)}`).join(" | ");
+  }
+  function base() {
+    return `You are the voice of a private walking-tour guide for a group of six friends in Kyoto. Your words are read aloud by phone text-to-speech into everyone's headphones.
+It is ${tokyoNow()} in Kyoto. Use the season and time of day where it helps.
+Today's route: Nijo Castle, Nishiki Market, Pontocho, the Shijo bridge and Minamiza, Gion (Shirakawa and Hanamikoji), Yasaka Shrine and Maruyama Park, Nene-no-michi and Kodaiji, Ninenzaka and Sannenzaka, Kiyomizu-dera.
+Already covered on this walk: ${recap()}
+Style: warm, vivid and conversational, like the best local guide. Tell stories about people. Point at things they can see right now ("look up at the eaves").
+Speech rules: plain spoken sentences only. No lists, headings, markdown, emoji or parentheses. Write Japanese names in simple romaji without macrons (Kodaiji, Nijo, Shijo). Never invent prices, opening hours or precise figures you are unsure of; say roughly or leave them out. Don't repeat what was already covered. No greeting or sign-off. Output only the words to be spoken.`;
+  }
+  const words = () => ($("shortSw").checked ? 110 : 210);
+  function stopPrompt(s) {
+    return `${base()}
+
+The group has just arrived at ${s.say}.
+Stories you can draw on: ${s.points.join("; ")}.
+${s.heads.length ? "Start with a brief, friendly heads-up: " + s.heads.join("; ") + "." : ""}
+Speak about ${words()} words. End with one specific thing to look for or do here.`;
+  }
+
+  async function narrate({ title, kind, prompt, prefix = null, tier = "default", text = null }) {
+    if (!isBrain()) { toast("Turn on “This phone runs the guide” first."); return false; }
+    if (busy) { toast("The guide is still talking. Press Stop talking first."); return false; }
+    busy = true; ctl = new AbortController();
+    live = { id: "n" + Date.now(), title, kind, sentences: prefix ? [prefix] : [], done: false, stopped: false, at: Date.now() };
+    state.current = live; renderNow(); pushState();
+    let emitted = 0;
+    const feed = (full, final) => {
+      const sents = splitSentences(full, final);
+      let changed = false;
+      while (emitted < sents.length) { live.sentences.push(sents[emitted++]); changed = true; }
+      if (changed) { state.current = live; renderNow(); playCurrent(); pushState(); }
+    };
+    let ok = true;
+    try {
+      if (text) feed(text, true);
+      else {
+        const r = await sample(prompt, { modelTier: tier, cache: false, signal: ctl.signal, onText: ({ text }) => feed(text, false) });
+        feed(r.text, true);
+      }
+    } catch (e) {
+      ok = false;
+      if (e && e.code === "cancelled") { /* stopped by guide */ }
+      else {
+        if (e && e.text) feed(e.text, true);
+        toast(e?.code === "rate_limited" ? "Claude is busy. Wait a moment and try again." : e?.code === "not_granted" ? "Allow Claude for this page to run the guide." : "The guide lost its connection. Try again.");
+      }
+    }
+    if (!live.stopped) {
+      live.done = true; state.current = live; renderNow(); pushState();
+      const spoken = live.sentences.join(" ");
+      quietAt = Date.now() + (spoken.split(/\s+/).length / 2.6) * 1000 + 1500;
+      if (spoken) {
+        history = [...history, { id: live.id, title, kind, text: spoken, at: live.at }].slice(-25);
+        db.doc("tour/history").set({ items: history }).catch(() => {});
+        renderHistory();
+      }
+    }
+    busy = false;
+    return ok;
+  }
+
+  async function prepare(s) {
+    if (!s || prepared[s.id] || preparing[s.id] || !isBrain()) return;
+    preparing[s.id] = true;
+    try { const r = await sample(stopPrompt(s), { modelTier: "default" }); prepared[s.id] = r.text; renderStops(); }
+    catch {} finally { preparing[s.id] = false; }
+  }
+  const nextStop = (fromId) => { const i = ROUTE.findIndex((s) => s.id === fromId); return ROUTE.slice(i + 1).find((s) => !state.covered.includes(s.id)) || null; };
+
+  async function arrive(s) {
+    if (!isBrain()) { toast("Turn on “This phone runs the guide” first."); return; }
+    if (busy) { toast("The guide is still talking. Press Stop talking first."); return; }
+    state.currentStopId = s.id;
+    if (!state.covered.includes(s.id)) state.covered = [...state.covered, s.id];
+    renderStops();
+    const ready = prepared[s.id]; delete prepared[s.id];
+    const p = narrate({ title: s.name, kind: "stop", prompt: stopPrompt(s), text: ready || null });
+    prepare(nextStop(s.id));
+    await p;
+  }
+
+  $("moreBtn").onclick = () => {
+    const s = ROUTE.find((x) => x.id === state.currentStopId);
+    const last = history[history.length - 1];
+    const where = s ? s.say : last ? last.title : "where we are";
+    narrate({ title: "More: " + (s ? s.name : where), kind: "more", tier: "default",
+      prompt: `${base()}\n\nThe group asked for more about ${where}. Share different stories and details from what you already said. Speak about 150 words.` });
+  };
+  $("legBtn").onclick = () => {
+    const s = ROUTE.find((x) => x.id === state.currentStopId) || null;
+    const n = s ? nextStop(s.id) : ROUTE.find((x) => !state.covered.includes(x.id));
+    if (!n) { toast("That was the last stop."); return; }
+    narrate({ title: `On the way to ${n.name}`, kind: "leg", tier: "default",
+      prompt: `${base()}\n\nThe group is now walking ${s ? "from " + s.say + " " : ""}to ${n.say}${s?.leg ? ", " + s.leg : ""}. In about 130 words: a little way-finding, what to notice on the way, and set up the next stop without giving away its best stories.` });
+    prepare(n);
+  };
+  $("placeBtn").onclick = () => {
+    const t = $("placeIn").value.trim(); if (!t) return;
+    narrate({ title: t.length > 48 ? t.slice(0, 46) + "…" : t, kind: "place", tier: "default",
+      prompt: `${base()}\n\nThe guide says: "${t}". Treat this as where the group is or what they are looking at, near their current stop (${state.currentStopId ? ROUTE.find((x) => x.id === state.currentStopId).say : "central Kyoto"}). Speak about 140 words. If you can't identify it, say what it most likely is and what to look for to tell.` })
+      .then((ok) => { if (ok) $("placeIn").value = ""; });
+  };
+  $("stopBtn").onclick = () => {
+    if (!live) return;
+    ctl?.abort(); live.stopped = true; live.done = true; state.current = live; quietAt = 0;
+    synth?.cancel(); renderNow(); pushState();
+  };
+  $("clearBtn").onclick = async () => {
+    const old = questions.filter((q) => q.status === "answered" || q.status === "skipped");
+    for (const q of old) { try { await db.doc("questions/" + q.id).delete(); } catch {} }
+    toast(old.length ? "Cleared." : "Nothing to clear.");
+  };
+
+  async function answer(q) {
+    if (!isBrain() || busy) return;
+    try { await db.doc("questions/" + q.id).update({ status: "answering" }); } catch {}
+    const s = ROUTE.find((x) => x.id === state.currentStopId);
+    const name = (q.name || "Someone").slice(0, 24);
+    const ok = await narrate({
+      title: `${name} asked`, kind: "answer", tier: "quick", prefix: `${name} asked: ${q.text}`,
+      prompt: `${base()}\n\n${name} in the group asked: "${q.text}"\nThe group is at or near ${s ? s.say : "central Kyoto"}. Answer for everyone in 40 to 110 words. If you don't know, say so briefly and offer what you do know.`,
+    });
+    try { await db.doc("questions/" + q.id).update({ status: ok ? "answered" : "queued" }); } catch {}
+  }
+
+  // Answer queued questions when the guide is quiet.
+  setInterval(() => {
+    if (!isBrain() || busy || !$("autoSw").checked) return;
+    const speaking = audioOn && synth && (synth.speaking || synth.pending);
+    if (speaking || Date.now() < quietAt) return;
+    const q = questions.find((x) => x.status === "queued");
+    if (q) answer(q);
+  }, 1500);
+
+  // ---------- questions from anyone ----------
+  $("nameIn").value = lsGet("name", "");
+  $("nameIn").onchange = (e) => lsSet("name", e.target.value.trim());
+  $("askBtn").onclick = async () => {
+    const text = $("qIn").value.trim();
+    const name = $("nameIn").value.trim();
+    if (!text) { $("qIn").focus(); return; }
+    if (!name) { toast("Add your name so the guide can say who asked."); $("nameIn").focus(); return; }
+    if (!db) { toast("Not connected to the tour yet."); return; }
+    lsSet("name", name);
+    $("askBtn").disabled = true;
+    try { await db.collection("questions").add({ name, text, status: "queued", at: Date.now() }); $("qIn").value = ""; toast("Sent. The guide will answer after the current story."); }
+    catch (e) { toast(e?.code === "invalid_argument" || e?.code === "not_granted" ? "Your access is view-only. Ask the guide to give you Contributor access." : "Couldn't send. Check your signal and try again."); }
+    finally { $("askBtn").disabled = false; }
+  };
+
+  // ---------- guide switch ----------
+  $("brainSw").checked = deviceBrain();
+  $("brainSw").onchange = (e) => {
+    lsSet("brain", e.target.checked ? "1" : "0"); renderGuide();
+    if (e.target.checked) { const n = ROUTE.find((x) => !state.covered.includes(x.id)); prepare(n); }
+  };
+  function renderGuide() {
+    $("guide").hidden = !canEdit;
+    $("brainUi").hidden = !isBrain();
+    if (!sample && canEdit) $("brainHint").textContent = "Claude isn't available in this view. Open the page on claude.ai while signed in.";
+    renderStops(); renderQueue();
+  }
+
+  // ---------- connect ----------
+  const conn = (txt, cls) => { const c = $("conn"); c.textContent = txt; c.className = "pill " + (cls || ""); };
+  (async () => {
+    const timer = setTimeout(() => { if (!db) conn("Offline", "bad"); }, 10000);
+    [db, sample, user] = await Promise.all([claude.use("db"), claude.use("sample"), claude.use("user")]);
+    clearTimeout(timer);
+    if (!db) { conn("Sign in to join", "bad"); $("nowText").textContent = "Open this link on claude.ai while signed in to hear the tour."; return; }
+    try { canEdit = !!(await user?.canEdit()); } catch { canEdit = false; }
+    renderGuide();
+    let first = true;
+    const loadT = setTimeout(() => { if (first) conn("Slow signal…", "bad"); }, 10000);
+    db.doc("tour/state").onSnapshot((snap) => {
+      const wasFirst = first;
+      first = false; clearTimeout(loadT); conn("Connected", "ok");
+      const d = snap.exists ? snap.data() : null;
+      if (d) {
+        state.currentStopId = d.currentStopId ?? null;
+        state.covered = Array.isArray(d.covered) ? d.covered : [];
+        if (!(isBrain() && busy)) state.current = d.current && Array.isArray(d.current.sentences) ? d.current : null;
+      }
+      renderNow(); renderStops(); playCurrent();
+      if (wasFirst && isBrain()) prepare(ROUTE.find((x) => !state.covered.includes(x.id)));
+    }, () => conn("Connection lost", "bad"));
+    db.doc("tour/history").onSnapshot((snap) => {
+      const d = snap.exists ? snap.data() : null;
+      history = Array.isArray(d?.items) ? d.items : [];
+      renderHistory();
+    }, () => {});
+    db.collection("questions").orderBy("at").limit(100).onSnapshot((snap) => {
+      questions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderQueue();
+    }, () => {});
+  })();
+
+  renderAudio(); renderStops();
+})();
+</script>
