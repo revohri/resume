@@ -1,0 +1,10 @@
+{
+  "name": "revohri-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "resume:install": "cd apps/resume && bundle install",
+    "resume:dev": "cd apps/resume && bundle exec jekyll serve",
+    "resume:build": "cd apps/resume && bundle exec jekyll build"
+  }
+}
