@@ -67,6 +67,7 @@
 
   .ptt { min-height: 72px; font-size: 1.1rem; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border-width: 2px; border-color: var(--indigo); color: var(--indigo); }
   .ptt.live { background: var(--kaki); border-color: var(--kaki); color: var(--paper); }
+  .reset { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
   .queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .queue li { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
   .queue .q { min-width: 0; overflow-wrap: anywhere; }
@@ -172,6 +173,15 @@
         <label class="switch" for="shortSw"><input id="shortSw" type="checkbox"> Shorter stories</label>
       </div>
       <ul id="stops" class="stops"></ul>
+      <div class="reset">
+        <p class="hint" id="whereNow">The guide doesn't know where you are yet.</p>
+        <button id="resetBtn" type="button">Reset where we are</button>
+        <div id="resetPanel" class="row" hidden>
+          <button id="resetLocBtn" class="warn" type="button">Forget location and recent talk</button>
+          <button id="resetAllBtn" class="warn" type="button">Also clear the ✓ marks</button>
+          <button id="resetCancel" type="button">Cancel</button>
+        </div>
+      </div>
       <button id="clearBtn" type="button">Clear answered questions</button>
     </div>
   </section>
@@ -207,7 +217,14 @@
     { id: "gion", name: "Gion: Shirakawa & Hanamikōji", say: "Gion, Shirakawa and Hanamikoji", jp: "祇園",
       points: ["Geiko and maiko, and the ochaya teahouse system", "Tatsumi Bridge and the willow-lined Shirakawa canal", "Ichiriki Chaya on the corner of Hanamikoji and its link to the 47 Ronin story"],
       heads: ["Photography is banned on some private lanes off Hanamikoji and fines can apply", "Never block, follow or touch maiko"],
-      leg: "east along Shijo street to the big vermilion gate at the end" },
+      leg: "south to the end of Hanamikoji, through the north gate into Kenninji's grounds" },
+    { id: "kenninji", name: "Kennin-ji", say: "Kenninji temple", jp: "建仁寺",
+      points: ["Founded in 1202 by the monk Eisai, who brought Rinzai Zen to Japan and helped popularise tea; Kyoto's oldest Zen temple",
+               "The twin dragons painted across the Dharma Hall ceiling by Koizumi Junsaku in 2002, for the temple's 800th anniversary",
+               "Tawaraya Sotatsu's Wind God and Thunder God screens, a National Treasure; the original is in the Kyoto National Museum and a high-quality replica is shown here",
+               "The circle, triangle and square garden, said to represent the elements of the universe, and the raked gravel of the main garden"],
+      heads: ["Shoes off inside; sit quietly on the veranda edge, don't step onto the gravel"],
+      leg: "back north up Hanamikoji to Shijo street, then east to the big vermilion gate at the end" },
     { id: "yasaka", name: "Yasaka Shrine & Maruyama Park", say: "Yasaka Shrine and Maruyama Park", jp: "八坂神社",
       points: ["Home shrine of the Gion Matsuri, held every July for over a thousand years", "The vermilion west gate facing Shijo street", "Maruyama Park's giant weeping cherry"],
       heads: [],
@@ -231,7 +248,7 @@
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
   let db = null, sample = null, user = null, canEdit = false;
-  let state = { current: null, currentStopId: null, covered: [] };
+  let state = { current: null, currentStopId: null, currentPlace: null, contextResetAt: 0, covered: [] };
   let history = [];
   let questions = [];
 
@@ -490,6 +507,8 @@
         await db.doc("tour/state").set({
           current: live ? { ...live, sentences: [...live.sentences] } : null,
           currentStopId: state.currentStopId ?? null,
+          currentPlace: state.currentPlace ?? null,
+          contextResetAt: state.contextResetAt ?? 0,
           covered: state.covered ?? [],
         });
       } catch (e) { toast("Couldn't reach the group. Check your signal."); break; }
@@ -508,13 +527,20 @@
     return new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo", weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" });
   }
   function recap() {
-    if (!history.length) return "nothing yet; this is the start of the walk";
-    return history.slice(-10).map((h) => `${h.title}: ${h.text.slice(0, 160)}`).join(" | ");
+    const recent = history.filter((h) => (h.at || 0) >= (state.contextResetAt || 0));
+    if (!recent.length) return "nothing yet";
+    return recent.slice(-10).map((h) => `${h.title}: ${h.text.slice(0, 160)}`).join(" | ");
+  }
+  function whereNow() {
+    if (state.currentPlace) return state.currentPlace;
+    const s = ROUTE.find((x) => x.id === state.currentStopId);
+    return s ? s.say : null;
   }
   function base() {
     return `You are the voice of a private walking-tour guide for a group of six friends in Kyoto. Your words are read aloud by phone text-to-speech into everyone's headphones.
 It is ${tokyoNow()} in Kyoto. Use the season and time of day where it helps.
-Today's route: Nijo Castle, Nishiki Market, Pontocho, the Shijo bridge and Minamiza, Gion (Shirakawa and Hanamikoji), Yasaka Shrine and Maruyama Park, Nene-no-michi and Kodaiji, Ninenzaka and Sannenzaka, Kiyomizu-dera.
+Today's route: Nijo Castle, Nishiki Market, Pontocho, the Shijo bridge and Minamiza, Gion (Shirakawa and Hanamikoji), Kenninji temple, Yasaka Shrine and Maruyama Park, Nene-no-michi and Kodaiji, Ninenzaka and Sannenzaka, Kiyomizu-dera.
+Where the group is right now: ${whereNow() ? whereNow() + ". Trust this over anything said earlier." : "unknown. Don't assume a location; speak generally about Kyoto or ask where they are."}
 Already covered on this walk: ${recap()}
 Style: warm, vivid and conversational, like the best local guide. Tell stories about people. Point at things they can see right now ("look up at the eaves").
 Write for the ear: mostly short and medium sentences with natural rhythm, the way a person talks. Speech rules: plain spoken sentences only. No lists, headings, markdown, emoji or parentheses. Write Japanese names in simple romaji without macrons (Kodaiji, Nijo, Shijo). Never invent prices, opening hours or precise figures you are unsure of; say roughly or leave them out. Don't repeat what was already covered. No greeting or sign-off. Output only the words to be spoken.`;
@@ -582,7 +608,7 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   async function arrive(s) {
     if (!isBrain()) { toast("Turn on “This phone runs the guide” first."); return; }
     if (busy) { toast("The guide is still talking. Press Stop talking first."); return; }
-    state.currentStopId = s.id;
+    state.currentStopId = s.id; state.currentPlace = null; renderWhere();
     if (!state.covered.includes(s.id)) state.covered = [...state.covered, s.id];
     renderStops();
     const ready = prepared[s.id]; delete prepared[s.id];
@@ -592,10 +618,9 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   }
 
   $("moreBtn").onclick = () => {
-    const s = ROUTE.find((x) => x.id === state.currentStopId);
-    const last = history[history.length - 1];
-    const where = s ? s.say : last ? last.title : "where we are";
-    narrate({ title: "More: " + (s ? s.name : where), kind: "more", tier: "default",
+    const where = whereNow();
+    if (!where) { toast("Pick a stop or use “Somewhere else” first, so the guide knows where you are."); return; }
+    narrate({ title: "More: " + where, kind: "more", tier: "default",
       prompt: `${base()}\n\nThe group asked for more about ${where}. Share different stories and details from what you already said. Speak about 150 words.` });
   };
   $("legBtn").onclick = () => {
@@ -608,8 +633,10 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   };
   $("placeBtn").onclick = () => {
     const t = $("placeIn").value.trim(); if (!t) return;
+    if (busy) { toast("The guide is still talking. Press Stop talking first."); return; }
+    state.currentPlace = t; renderWhere(); pushState();
     narrate({ title: t.length > 48 ? t.slice(0, 46) + "…" : t, kind: "place", tier: "default",
-      prompt: `${base()}\n\nThe guide says: "${t}". Treat this as where the group is or what they are looking at, near their current stop (${state.currentStopId ? ROUTE.find((x) => x.id === state.currentStopId).say : "central Kyoto"}). Speak about 140 words. If you can't identify it, say what it most likely is and what to look for to tell.` })
+      prompt: `${base()}\n\nThe guide says: "${t}". Treat this as where the group is or what they are looking at, in central Kyoto. Speak about 140 words. If you can't identify it, say what it most likely is and what to look for to tell.` })
       .then((ok) => { if (ok) $("placeIn").value = ""; });
   };
   $("stopBtn").onclick = () => {
@@ -617,6 +644,23 @@ Speak about ${words()} words. End with one specific thing to look for or do here
     ctl?.abort(); live.stopped = true; live.done = true; state.current = live; quietAt = 0;
     resetAudio(); renderNow(); pushState();
   };
+  function renderWhere() {
+    const w = whereNow();
+    $("whereNow").textContent = w ? "The guide thinks you're at: " + w + "." : "The guide doesn't know where you are. Tap “We're here” on a stop, or use “Somewhere else”.";
+  }
+  $("resetBtn").onclick = () => { $("resetPanel").hidden = !$("resetPanel").hidden; };
+  $("resetCancel").onclick = () => { $("resetPanel").hidden = true; };
+  function resetContext(all) {
+    if (!isBrain()) { toast("Turn on “This phone runs the guide” first."); return; }
+    state.currentStopId = null; state.currentPlace = null; state.contextResetAt = Date.now();
+    if (all) state.covered = [];
+    for (const k of Object.keys(prepared)) delete prepared[k];   // prepared stories carried the old context
+    $("resetPanel").hidden = true;
+    renderStops(); renderWhere(); pushState();
+    toast(all ? "Reset. The guide starts fresh, and all stops are unmarked." : "Reset. Tap “We're here” on the right stop.");
+  }
+  $("resetLocBtn").onclick = () => resetContext(false);
+  $("resetAllBtn").onclick = () => resetContext(true);
   $("clearBtn").onclick = async () => {
     const old = questions.filter((q) => q.status === "answered" || q.status === "skipped");
     for (const q of old) { try { await db.doc("questions/" + q.id).delete(); } catch {} }
@@ -626,11 +670,10 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   async function answer(q) {
     if (!isBrain() || busy) return;
     try { await db.doc("questions/" + q.id).update({ status: "answering" }); } catch {}
-    const s = ROUTE.find((x) => x.id === state.currentStopId);
     const name = (q.name || "Someone").slice(0, 24);
     const ok = await narrate({
       title: `${name} asked`, kind: "answer", tier: "quick", prefix: `${name} asked: ${q.text}`,
-      prompt: `${base()}\n\n${name} in the group asked: "${q.text}"\nThe group is at or near ${s ? s.say : "central Kyoto"}. Answer for everyone in 40 to 110 words. If you don't know, say so briefly and offer what you do know.`,
+      prompt: `${base()}\n\n${name} in the group asked: "${q.text}"\nAnswer for everyone in 40 to 110 words. If you don't know, say so briefly and offer what you do know.`,
     });
     try { await db.doc("questions/" + q.id).update({ status: ok ? "answered" : "queued" }); } catch {}
   }
@@ -745,10 +788,12 @@ Speak about ${words()} words. End with one specific thing to look for or do here
       const d = snap.exists ? snap.data() : null;
       if (d) {
         state.currentStopId = d.currentStopId ?? null;
+        state.currentPlace = d.currentPlace ?? null;
+        state.contextResetAt = d.contextResetAt ?? 0;
         state.covered = Array.isArray(d.covered) ? d.covered : [];
         if (!(isBrain() && busy)) state.current = d.current && Array.isArray(d.current.sentences) ? d.current : null;
       }
-      renderNow(); renderStops(); playCurrent();
+      renderNow(); renderStops(); renderWhere(); playCurrent();
       if (wasFirst && isBrain()) prepare(ROUTE.find((x) => !state.covered.includes(x.id)));
     }, () => conn("Connection lost", "bad"));
     db.doc("tour/history").onSnapshot((snap) => {
