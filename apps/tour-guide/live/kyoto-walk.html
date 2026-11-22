@@ -65,6 +65,8 @@
   input[type="text"] { flex: 1 1 160px; }
   .hint { font-size: 0.85rem; color: var(--muted); margin: 0; }
 
+  .ptt { min-height: 72px; font-size: 1.1rem; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border-width: 2px; border-color: var(--indigo); color: var(--indigo); }
+  .ptt.live { background: var(--kaki); border-color: var(--kaki); color: var(--paper); }
   .queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .queue li { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
   .queue .q { min-width: 0; overflow-wrap: anywhere; }
@@ -139,8 +141,13 @@
       <label class="label" for="nameIn">Your name</label>
       <input id="nameIn" type="text" placeholder="e.g. Priya" maxlength="24" autocomplete="given-name">
     </div>
-    <textarea id="qIn" placeholder="Why do the lanterns say…? Tap the mic on your keyboard to speak." maxlength="400"></textarea>
-    <button id="askBtn" class="primary" type="button">Send question</button>
+    <button id="pttBtn" class="big ptt" type="button" hidden aria-describedby="pttHint">Hold to ask</button>
+    <p class="hint" id="pttHint">On iPhone: tap “Speak a question”, then the mic on your keyboard.</p>
+    <textarea id="qIn" placeholder="Type or dictate a question" maxlength="400"></textarea>
+    <div class="row">
+      <button id="kbMicBtn" type="button">Speak a question</button>
+      <button id="askBtn" class="primary" type="button" style="flex:1 1 140px">Send question</button>
+    </div>
     <ul id="queue" class="queue"></ul>
   </section>
 
@@ -244,7 +251,8 @@
   let pending = [];                    // [{text, idx}] not yet handed to an engine
   let outstanding = 0;                 // chunks handed over and not finished
   let gen = 0;                         // bumps on every reset so stale callbacks are ignored
-  let claudeStarts = [];               // first sentence index of each chunk Claude is holding
+  let claudeInflight = [];             // chunks handed to Claude's voice, oldest first
+  let holding = false;                 // push-to-talk is held: speech waits
   const CLAUDE_VOICES = [["buttery", "Warm (Claude)"], ["airy", "Light (Claude)"], ["rounded", "Mellow (Claude)"], ["glassy", "Crisp (Claude)"]];
   // Novelty and robotic voices that ship on iPhones and Macs.
   const BAD = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|deranged|hysterical|pipe organ)\b/i;
@@ -295,7 +303,7 @@
   }
 
   function resetAudio() {
-    gen++; pending = []; outstanding = 0; claudeStarts = [];
+    gen++; pending = []; outstanding = 0; claudeInflight = [];
     synth?.cancel();
     tts?.stop().catch(() => {});
   }
@@ -305,7 +313,7 @@
   }
 
   function pump() {
-    if (!audioOn || muted || !pending.length) return;
+    if (!audioOn || muted || holding || !pending.length) return;
     const limit = engine() === "claude" ? 2 : 1;   // Claude prepares the next line while one plays
     if (outstanding >= limit) return;
     let chunk = [], len = 0;
@@ -318,18 +326,21 @@
     const done = () => { if (my !== gen) return; outstanding = Math.max(0, outstanding - 1); pump(); };
     if (engine() === "claude") {
       // Highlight follows playback: the chunk queued behind lights up when the one before finishes.
-      claudeStarts.push(first);
-      if (claudeStarts.length === 1) markSpoken(nid, first);
-      const advance = () => { claudeStarts.shift(); if (claudeStarts.length) markSpoken(nid, claudeStarts[0]); };
+      claudeInflight.push(chunk);
+      if (claudeInflight.length === 1) markSpoken(nid, first);
+      const advance = () => { claudeInflight.shift(); if (claudeInflight.length) markSpoken(nid, claudeInflight[0][0].idx); };
       tts.add([{ text, voice: $("voiceSel").value || "buttery", language: "en", rate: parseFloat($("rateSel").value) || 1 }])
         .then(() => { if (my === gen) advance(); done(); })
         .catch((e) => {
           if (my !== gen) return;
-          if (e?.code === "stopped") { outstanding = 0; claudeStarts = []; return; }
+          const requeue = () => { pending = [...claudeInflight.flat(), ...pending]; claudeInflight = []; outstanding = 0; setTimeout(pump, 400); };
+          // The mic (push to talk) or a hidden screen paused Claude's voice: pick up where it left off.
+          if ((e?.code === "stopped" && (e?.reason === "interrupted" || e?.reason === "hidden")) || e?.code === "busy") { requeue(); return; }
+          if (e?.code === "stopped") { outstanding = 0; claudeInflight = []; return; }
           // Claude voice unavailable or over its allowance: switch this phone to its own voice.
           lsSet("engine", "phone"); renderEngines();
           toast("Claude's voice isn't available right now. Using the phone's voice.");
-          pending = [...chunk, ...pending]; outstanding = 0; claudeStarts = []; pump();
+          pending = [...claudeInflight.flat(), ...pending]; outstanding = 0; claudeInflight = []; pump();
         });
     } else if (synth) {
       const u = new SpeechSynthesisUtterance(text);
@@ -360,7 +371,7 @@
 
   let wakeLock = null;
   async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
-  document.addEventListener("visibilitychange", () => { if (audioOn && document.visibilityState === "visible") keepAwake(); });
+  document.addEventListener("visibilitychange", () => { if (audioOn && document.visibilityState === "visible") { keepAwake(); pump(); } });
 
   function sayTest() {
     // Must run inside a tap: this is what unlocks audio on phones.
@@ -635,18 +646,72 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   // ---------- questions from anyone ----------
   $("nameIn").value = lsGet("name", "");
   $("nameIn").onchange = (e) => lsSet("name", e.target.value.trim());
-  $("askBtn").onclick = async () => {
-    const text = $("qIn").value.trim();
+  async function sendQuestion(text) {
     const name = $("nameIn").value.trim();
-    if (!text) { $("qIn").focus(); return; }
-    if (!name) { toast("Add your name so the guide can say who asked."); $("nameIn").focus(); return; }
-    if (!db) { toast("Not connected to the tour yet."); return; }
+    if (!text) { $("qIn").focus(); return false; }
+    if (!name) { $("qIn").value = text; toast("Add your name so the guide can say who asked, then press Send."); $("nameIn").focus(); return false; }
+    if (!db) { $("qIn").value = text; toast("Not connected to the tour yet."); return false; }
     lsSet("name", name);
     $("askBtn").disabled = true;
-    try { await db.collection("questions").add({ name, text, status: "queued", at: Date.now() }); $("qIn").value = ""; toast("Sent. The guide will answer after the current story."); }
-    catch (e) { toast(e?.code === "invalid_argument" || e?.code === "not_granted" ? "Your access is view-only. Ask the guide to give you Contributor access." : "Couldn't send. Check your signal and try again."); }
+    try { await db.collection("questions").add({ name, text, status: "queued", at: Date.now() }); $("qIn").value = ""; toast("Sent: “" + (text.length > 60 ? text.slice(0, 58) + "…" : text) + "”"); return true; }
+    catch (e) { $("qIn").value = text; toast(e?.code === "invalid_argument" || e?.code === "not_granted" ? "Your access is view-only. Ask the guide to give you Contributor access." : "Couldn't send. Check your signal and try again."); return false; }
     finally { $("askBtn").disabled = false; }
-  };
+  }
+  $("askBtn").onclick = () => sendQuestion($("qIn").value.trim());
+  $("kbMicBtn").onclick = () => { $("qIn").focus(); toast("Now tap the mic on your keyboard, speak, then press Send."); };
+
+  // Push to talk (Chrome on Android/desktop): hold, speak, release to send.
+  let dict = null, said = "", partial = "", pttDown = false, pttStarted = 0;
+  function pttUi(live) {
+    $("pttBtn").classList.toggle("live", live);
+    $("pttBtn").textContent = live ? "Listening… release to send" : "Hold to ask";
+  }
+  function holdAudio(on) {
+    holding = on;
+    if (on) { if (engine() === "phone") synth?.pause(); }
+    else { if (engine() === "phone") synth?.resume(); setTimeout(pump, 300); }
+  }
+  function pttStart(ev) {
+    if (!dict || pttDown) return;
+    ev?.preventDefault?.();
+    pttDown = true; said = ""; partial = ""; pttStarted = Date.now();
+    holdAudio(true); pttUi(true);
+    dict.start().catch((e) => {
+      pttDown = false; pttUi(false); holdAudio(false);
+      if (e?.code === "not_granted") { $("pttBtn").hidden = true; toast("Microphone is off for this page. Type your question instead."); }
+      else if (e?.code === "dismissed") toast("Allow the microphone, then hold the button again.");
+      else if (e?.code === "unavailable") { $("pttBtn").hidden = true; toast("Voice input isn't available here. Type your question instead."); }
+      else if (e?.code === "rate_limited") toast("Voice input is busy. Try again in a moment.");
+      else if (e?.code !== "stopped") toast("The microphone didn't start. Try again or type.");
+    });
+  }
+  async function pttEnd() {
+    if (!dict || !pttDown) return;
+    pttDown = false; pttUi(false);
+    try { await dict.stop(); } catch {}
+    holdAudio(false);
+    const text = (said + " " + partial).replace(/\s+/g, " ").trim();
+    partial = "";
+    if (!text) { toast(Date.now() - pttStarted < 700 ? "Hold the button while you speak." : "Didn't catch that. Hold and try again."); return; }
+    $("qIn").value = text;
+    sendQuestion(text);
+  }
+  function wirePtt() {
+    if (!dict) return;
+    $("pttBtn").hidden = false;
+    $("pttHint").textContent = "Hold the button, ask your question, let go to send.";
+    dict.onPartial(({ text }) => { partial = text; if (pttDown) $("qIn").value = (said + " " + partial).trim(); });
+    dict.onFinal(({ text }) => { said += text; partial = ""; $("qIn").value = said.trim(); });
+    dict.onState(({ state }) => { if (state === "idle" && pttDown) { pttDown = false; pttUi(false); holdAudio(false); } });
+    const b = $("pttBtn");
+    b.addEventListener("pointerdown", (e) => { b.setPointerCapture?.(e.pointerId); pttStart(e); });
+    b.addEventListener("pointerup", pttEnd);
+    b.addEventListener("pointercancel", pttEnd);
+    b.addEventListener("contextmenu", (e) => e.preventDefault());
+    b.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) pttStart(e); });
+    b.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") pttEnd(); });
+  }
+
 
   // ---------- guide switch ----------
   $("brainSw").checked = deviceBrain();
@@ -665,7 +730,8 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   const conn = (txt, cls) => { const c = $("conn"); c.textContent = txt; c.className = "pill " + (cls || ""); };
   (async () => {
     const timer = setTimeout(() => { if (!db) conn("Offline", "bad"); }, 10000);
-    [db, sample, user, tts] = await Promise.all([claude.use("db"), claude.use("sample"), claude.use("user"), claude.use("tts")]);
+    [db, sample, user, tts, dict] = await Promise.all([claude.use("db"), claude.use("sample"), claude.use("user"), claude.use("tts"), claude.use("dictation")]);
+    wirePtt();
     renderEngines(); renderAudio();
     clearTimeout(timer);
     if (!db) { conn("Sign in to join", "bad"); $("nowText").textContent = "Open this link on claude.ai while signed in to hear the tour."; return; }
