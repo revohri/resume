@@ -5,12 +5,12 @@ Personal projects, one repo.
 | Path | What | Stack |
 | --- | --- | --- |
 | [`apps/resume`](apps/resume) | Resume site, deployed to GitHub Pages | Jekyll |
-| [`apps/tour-guide`](apps/tour-guide) | Shared AI walking-tour guide (planning) | TBD — see [PLAN.md](apps/tour-guide/PLAN.md) |
-| `packages/` | Shared code (empty for now) | — |
+| [`apps/tour-guide`](apps/tour-guide) | Shared AI walking-tour guide — see [PLAN.md](apps/tour-guide/PLAN.md) | TypeScript (Vite/React PWA + Node/Hono + LiveKit) |
+| [`packages/tour-shared`](packages/tour-shared) | Tour types, event protocol, curated routes (Kyoto) | TypeScript |
 
 ## Layout
 
-- `apps/*` — deployable things. Each app owns its own toolchain (Ruby, Node, Python…).
+- `apps/*` — deployable things. Each app picks the stack that suits it and owns its own toolchain.
 - `packages/*` — shared libraries used by JS/TS apps, wired up through pnpm workspaces.
 - `.github/workflows/` — one workflow per app, filtered by path so apps deploy independently.
 

@@ -29,7 +29,7 @@ live mic. **They record short clips.**
 | Mode | How it works | Complexity |
 | --- | --- | --- |
 | **Host only** | The guide-holder's phone has a push-to-talk button. | Low |
-| **Everyone, queued** (recommended default) | Any listener holds a button to record a clip (or types a question). It goes into a queue, and the AI answers it to the whole group with "Sam asked: …" | Low–medium. A clip is just an upload, with no live mixing. |
+| **Everyone, queued** ✅ *chosen* | Any listener holds a button to record a clip (or types a question). It goes into a queue, and the AI answers it to the whole group with "Sam asked: …" | Low–medium. A clip is just an upload, with no live mixing. |
 | Everyone, open mic | A live voice conversation with the whole group. | High. Skip it. |
 
 The host gets two toggles: **auto-answer vs. approve each question**, and **listeners can ask on/off**.
@@ -65,18 +65,29 @@ needs location permission and battery drain.
                                                                          talking about X"
 ```
 
-### Components
+### Stack — TypeScript end to end ✅
+
+Other apps in the monorepo can use whatever stack suits them. For this project, **TypeScript everywhere** fits best:
+
+- The hardest part of this app is the **event protocol** between the host phone, listener phones, and the
+  agent: tour state, question queue, "now narrating", transcript. Sharing one set of types across all three
+  removes a whole class of bugs.
+- Python's LiveKit Agents SDK is best at live, interruptible voice conversation (turn detection, barge-in).
+  This design doesn't use that: questions arrive as uploaded clips, and the agent mostly *publishes* audio.
+  The Node SDK covers that well.
 
 | Piece | Choice | Notes |
 | --- | --- | --- |
-| Audio room | LiveKit (Cloud to start) | The AI agent is a participant that publishes one audio track. |
-| Agent runtime | LiveKit Agents (Node or Python) | Runs the STT → LLM → TTS loop and publishes audio. |
-| Speech-to-text | Deepgram or Whisper | Only for question clips, so it's cheap. |
-| LLM | Claude via the Anthropic SDK (`claude-opus-5-5`, low effort for snappy replies) | Tool use for `get_nearby_places`, `get_place_details`, `get_route_context`. Haiku 5.5 is an option if latency or cost becomes an issue. |
-| Text-to-speech | ElevenLabs or Cartesia (streaming) | Streaming TTS keeps time-to-first-word low. |
-| Places data | Wikipedia GeoSearch + OpenStreetMap Overpass (free), Google Places (optional, paid) | Wikipedia has the stories, and OSM has the coverage. |
-| Web app | Vite + React PWA, `livekit-client` | One app with two roles: host and listener. |
-| State | In-memory per tour to start, Redis/SQLite later | Tours are short-lived. |
+| Web app | Vite + React + TS PWA, `livekit-client` | One app with two roles: host and listener. |
+| Server | Node + Hono | Tour sessions, question queue, POI lookup, Claude calls. Holds API keys, which must never be in the browser. |
+| Agent worker | `@livekit/agents` (Node), in the same app as the server | Phase 2. Turns text into a live audio track in the room. |
+| Shared | `packages/tour-shared` | Event/state types, POI schema, curated routes (Kyoto first). |
+| Audio room | LiveKit Cloud (free tier to start) | |
+| Speech-to-text | Deepgram (or Whisper) | Question clips only. |
+| LLM | Claude via `@anthropic-ai/sdk`, `claude-opus-5-5` at low effort | Tool use: `get_nearby_places`, `get_place_details`, `get_route_context`. Haiku 5.5 if latency or cost bites. |
+| Text-to-speech | ElevenLabs or Cartesia, streaming | Must say Japanese names well (see Kyoto). |
+| Places data | Wikipedia GeoSearch (EN **and JA**) + OpenStreetMap Overpass | Japanese Wikipedia is far richer for Kyoto. Claude reads it and narrates in English. |
+| Hosting | One Node service on Fly.io or Railway that also serves the built PWA | Needs a long-running process for the agent, so not serverless. One deploy. |
 
 ### Proactive narration logic (the "brain")
 
@@ -100,15 +111,58 @@ needs location permission and battery drain.
 3. Listeners scan, enter a name, and tap **Join**. The tap is required for browsers to allow audio playback.
 4. Everyone hears: "Welcome, everyone…"
 
+## First field test — Kyoto ✅
+
+A **guided free-roam** walk. Curated "anchor" stops guarantee the highlights get rich narration. Between them,
+the guide discovers smaller places as you go. Route data lives in
+`packages/tour-shared/src/routes/kyoto-higashiyama.ts`.
+
+### Route (~7 km of walking, 3–4 hours with stops)
+
+| # | Stop | Why it's an anchor |
+| --- | --- | --- |
+| 1 | **Nijō Castle** (Nijō-jō) | Tokugawa power in imperial Kyoto. "Nightingale floors" that squeak to expose intruders. Where the shogunate handed power back to the emperor in 1867. |
+| — | *Walk east along Oike / Sanjō (~2.5 km), or take the Tōzai line Nijōjō-mae → Kyoto Shiyakusho-mae* | The guide goes quiet when it detects train speed, and picks up again on arrival. |
+| 2 | **Nishiki Market** | "Kyoto's kitchen": 400 years of food stalls. Lots of small things to discover. |
+| 3 | **Pontochō** | A narrow lantern-lit alley of teahouses. Kamo River summer platforms (*kawayuka*). |
+| 4 | **Shijō Ōhashi & Minami-za** | The birthplace of kabuki on the riverbank. Minami-za is the oldest kabuki theatre. |
+| 5 | **Gion: Shirakawa & Hanamikōji** | Geiko and maiko culture, *ochaya* teahouses, Tatsumi Bridge. |
+| 6 | **Yasaka Shrine & Maruyama Park** | Gion Matsuri's home shrine. The famous weeping cherry. |
+| 7 | **Nene-no-michi & Kōdai-ji** | The widow of Toyotomi Hideyoshi, the man who unified Japan. |
+| 8 | **Yasaka Pagoda, Ninenzaka & Sannenzaka** | Preserved Edo-period slopes. The "fall here and you'll have bad luck for three years" legend. |
+| 9 | **Kiyomizu-dera** | The wooden stage built without nails, Otowa waterfall, "jumping off the stage at Kiyomizu". A finale at sunset. |
+
+### Kyoto-specific requirements
+
+- **Dense POIs in Higashiyama.** There's a shrine every 50m, so a naive geofence would talk nonstop. Use stricter
+  scoring between anchors, a minimum gap between narrations, and short one-liners ("on your right, a tiny
+  Jizō shrine…") for minor spots.
+- **Japanese pronunciation.** Store each place with its kanji name, romaji, and a pronunciation hint, and feed
+  these to the TTS. Test names like *Kiyomizu*, *Kōdai-ji*, and *Hanamikōji* before the trip.
+- **Etiquette prompts.** Gion has banned photography on some private lanes, and harassing maiko is a real
+  problem. The guide should give a gentle heads-up before entering, plus temple manners (quiet voices, no
+  photos inside some halls).
+- **Transit awareness.** At speeds above ~15 km/h, pause proactive narration. On arrival, give a short
+  recap ("we've just come from…").
+- **Connectivity.** Every listener needs mobile data (eSIM or pocket Wi-Fi). Pre-generate and cache the
+  anchor narrations on the host phone, so the highlights work even in a dead zone. Listeners fall back to
+  text with on-device speech if the audio stream drops.
+- **Crowds.** Kiyomizu and Sannenzaka are packed. Headphones help, and a "where's the group?" map pin from
+  the host's location stops anyone from getting lost.
+- **Seasonal hooks.** The guide knows the date. It mentions the cherry blossoms, autumn leaves, or
+  illuminations happening right then.
+
 ## Phases
 
 ### Phase 0 — Monorepo ✅
 This repo is now a monorepo. The resume lives in `apps/resume`, and this app lives in `apps/tour-guide`.
 
 ### Phase 1 — Solo prototype (prove the content is good)
-- A single-device PWA: location → POIs → Claude narration → TTS played locally.
+- Host PWA plus the Node server: location → POIs → Claude narration → TTS played on the host phone.
 - Push-to-talk questions.
-- **Test:** do a real walk alone. Is it interesting? Is the timing right? Is it too chatty?
+- A **simulated walk** mode that replays a GPS track of the Kyoto route at home, so timing and chattiness
+  can be tuned before the trip.
+- **Test:** a real walk locally, then the Kyoto simulation. Is it interesting? Is the timing right? Is it too chatty?
 - You could already use this with a group via option C (a Bluetooth broadcast or splitter).
 
 ### Phase 2 — Shared listening
@@ -127,15 +181,15 @@ This repo is now a monorepo. The resume lives in `apps/resume`, and this app liv
 - Pre-planned routes: pick stops in advance and pre-generate everything (also gives offline resilience).
 - Post-tour recap: a map, the places visited, and a transcript sent to everyone.
 
-## Proposed folder structure
+## Folder structure
 
 ```
 apps/
   resume/            # existing Jekyll site
-  tour-guide/        # PWA (host + listener)
-  tour-agent/        # LiveKit agent worker (STT → Claude → TTS)   — Phase 2
+  tour-guide/        # Vite + React PWA (host + listener roles)
+  tour-server/       # Node + Hono API, and the LiveKit agent worker from Phase 2
 packages/
-  tour-shared/       # shared types: tour state, events, POI schema
+  tour-shared/       # shared types, event protocol, curated routes (Kyoto)
 ```
 
 ## Rough running costs (per 2-hour tour, ~10 people)
@@ -156,9 +210,17 @@ These are order-of-magnitude guesses. Measure during Phase 1.
 - **Battery on the host phone:** keep the screen on and bring a battery pack for Phase 1–3.
 - **Privacy:** only the host's location is used, and it isn't stored after the tour ends.
 
-## Decisions needed from you
+## Decisions log
 
-1. Is the default question mode **everyone, queued** or **host only**?
-2. Is the agent in **TypeScript** (one language across the repo) or **Python** (LiveKit's most mature
-   Agents SDK)?
-3. Is the first real-world test **free-roam** (discover as you go) or a **pre-planned route**?
+| Decision | Choice |
+| --- | --- |
+| Shared audio | LiveKit room, the AI as the single speaker |
+| Who can ask | Everyone, through a queue, with host moderation available |
+| Location source | Host phone only |
+| Stack | TypeScript end to end (Vite/React PWA, Node/Hono, LiveKit Node agent) |
+| First field test | Kyoto: Nijō Castle → Gion → Kiyomizu-dera, guided free-roam |
+
+## Still open
+
+- Trip dates, which set the build deadline and the seasonal content.
+- Group size, and whether everyone has their own mobile data.
