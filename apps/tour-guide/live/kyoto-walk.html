@@ -113,6 +113,13 @@
   <section class="block" id="listen">
     <button id="audioBtn" class="big primary" type="button">Turn on audio</button>
     <p class="hint" id="audioHint">Keep this screen on during the walk. Locking the phone stops the audio.</p>
+    <div class="row" id="engineRow" hidden>
+      <label class="label" for="engineSel">Sound</label>
+      <select id="engineSel" style="flex:1 1 180px">
+        <option value="claude">Claude voice (best)</option>
+        <option value="phone">Phone voice</option>
+      </select>
+    </div>
     <div class="row">
       <label class="label" for="voiceSel">Voice</label>
       <select id="voiceSel" style="flex:1 1 180px"></select>
@@ -123,6 +130,7 @@
         <option value="1.1">Brisk</option>
       </select>
     </div>
+    <p class="hint" id="voiceTip" hidden>For a much nicer voice on iPhone: Settings → Accessibility → Spoken Content → Voices → English, download a voice marked Premium or Enhanced (Ava, Zoe or Evan), then reload this page and pick it above.</p>
   </section>
 
   <section class="block" id="ask">
@@ -225,37 +233,116 @@
   function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 4200); }
 
   // ---------- speech (each phone speaks the text itself) ----------
+  // Two engines: Claude's voices (Chrome on Android/desktop) or the phone's own voice.
+  // Sentences arrive one by one; we hand them over in paragraph-sized chunks so the
+  // delivery flows instead of restarting on every sentence.
   const synth = window.speechSynthesis || null;
+  let tts = null;                      // Claude voice namespace, when this view offers it
   let voices = [];
   let audioOn = false, muted = false, playingId = null, spokenIdx = 0;
   let quietAt = 0;
+  let pending = [];                    // [{text, idx}] not yet handed to an engine
+  let outstanding = 0;                 // chunks handed over and not finished
+  let gen = 0;                         // bumps on every reset so stale callbacks are ignored
+  let claudeStarts = [];               // first sentence index of each chunk Claude is holding
+  const CLAUDE_VOICES = [["buttery", "Warm (Claude)"], ["airy", "Light (Claude)"], ["rounded", "Mellow (Claude)"], ["glassy", "Crisp (Claude)"]];
+  // Novelty and robotic voices that ship on iPhones and Macs.
+  const BAD = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|deranged|hysterical|pipe organ)\b/i;
+
+  const engine = () => (lsGet("engine", "claude") === "claude" && tts ? "claude" : "phone");
 
   function loadVoices() {
+    const sel = $("voiceSel"); sel.textContent = "";
+    if (engine() === "claude") {
+      CLAUDE_VOICES.forEach(([v, label]) => { const o = document.createElement("option"); o.value = v; o.textContent = label; sel.appendChild(o); });
+      sel.value = lsGet("cvoice", "buttery");
+      $("voiceTip").hidden = true;
+      return;
+    }
     if (!synth) return;
-    const all = synth.getVoices();
-    voices = all.filter((v) => /^en/i.test(v.lang));
-    const rank = (v) => (/(premium|enhanced|natural|neural)/i.test(v.name) ? 0 : /google|samantha|daniel|karen|serena|ava|zoe/i.test(v.name) ? 1 : 2);
-    voices.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
-    const sel = $("voiceSel"); const saved = lsGet("voice", "");
-    sel.textContent = "";
+    voices = synth.getVoices().filter((v) => /^en/i.test(v.lang) && !BAD.test(v.name));
+    const rank = (v) =>
+      /premium/i.test(v.name) ? 0 :
+      /enhanced|natural|neural/i.test(v.name) ? 1 :
+      /^google (us|uk) english/i.test(v.name) ? 2 :
+      /(ava|zoe|evan|nathan|noelle|serena|samantha|daniel|karen|moira|tessa|kate|oliver|allison|susan|tom)/i.test(v.name) ? 3 : 4;
+    const accent = (v) => (/en[-_](us|gb)/i.test(v.lang) ? 0 : 1);
+    voices.sort((a, b) => rank(a) - rank(b) || accent(a) - accent(b) || a.name.localeCompare(b.name));
     voices.forEach((v) => { const o = document.createElement("option"); o.value = v.voiceURI; o.textContent = `${v.name} (${v.lang})`; sel.appendChild(o); });
+    const saved = lsGet("voice", "");
     if (saved && voices.some((v) => v.voiceURI === saved)) sel.value = saved;
+    // Nudge iPhone users toward a downloadable high-quality voice.
+    $("voiceTip").hidden = voices.some((v) => rank(v) <= 1);
   }
-  if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
-  else { $("audioBtn").disabled = true; $("audioHint").textContent = "This browser can't read text aloud. Open the link in Safari or Chrome."; }
+  function renderEngines() {
+    const es = $("engineSel");
+    es.querySelector('option[value="claude"]').hidden = !tts;
+    es.querySelector('option[value="claude"]').disabled = !tts;
+    es.value = engine();
+    $("engineRow").hidden = !tts;
+    loadVoices();
+  }
+  if (synth) synth.onvoiceschanged = () => { if (engine() === "phone") loadVoices(); };
   $("rateSel").value = lsGet("rate", "1");
-  $("voiceSel").onchange = (e) => lsSet("voice", e.target.value);
+  $("voiceSel").onchange = (e) => lsSet(engine() === "claude" ? "cvoice" : "voice", e.target.value);
   $("rateSel").onchange = (e) => lsSet("rate", e.target.value);
+  $("engineSel").onchange = (e) => { resetAudio(); lsSet("engine", e.target.value); renderEngines(); sayTest(); };
 
-  function speak(text, idx, nid) {
-    if (!synth || muted) return;
-    const u = new SpeechSynthesisUtterance(text);
-    const v = voices.find((x) => x.voiceURI === $("voiceSel").value);
-    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = "en-US"; }
-    u.rate = parseFloat($("rateSel").value) || 1;
-    u.onstart = () => markSpoken(nid, idx);
-    synth.speak(u);
+  function phoneVoice() { return voices.find((x) => x.voiceURI === $("voiceSel").value) || voices[0] || null; }
+  function forEar(text) {
+    // Hyphenated romaji ("Kiyomizu-dera") reads more naturally as separate words.
+    return text.replace(/([A-Za-z])-([a-z])/g, "$1 $2");
   }
+
+  function resetAudio() {
+    gen++; pending = []; outstanding = 0; claudeStarts = [];
+    synth?.cancel();
+    tts?.stop().catch(() => {});
+  }
+  function isSpeaking() {
+    if (!audioOn) return false;
+    return outstanding > 0 || pending.length > 0 || (!!synth && (synth.speaking || synth.pending));
+  }
+
+  function pump() {
+    if (!audioOn || muted || !pending.length) return;
+    const limit = engine() === "claude" ? 2 : 1;   // Claude prepares the next line while one plays
+    if (outstanding >= limit) return;
+    let chunk = [], len = 0;
+    while (pending.length && (chunk.length === 0 || len + pending[0].text.length < 480)) {
+      const p = pending.shift(); chunk.push(p); len += p.text.length + 1;
+    }
+    const text = forEar(chunk.map((c) => c.text).join(" "));
+    const nid = playingId, first = chunk[0].idx, my = gen;
+    outstanding++;
+    const done = () => { if (my !== gen) return; outstanding = Math.max(0, outstanding - 1); pump(); };
+    if (engine() === "claude") {
+      // Highlight follows playback: the chunk queued behind lights up when the one before finishes.
+      claudeStarts.push(first);
+      if (claudeStarts.length === 1) markSpoken(nid, first);
+      const advance = () => { claudeStarts.shift(); if (claudeStarts.length) markSpoken(nid, claudeStarts[0]); };
+      tts.add([{ text, voice: $("voiceSel").value || "buttery", language: "en", rate: parseFloat($("rateSel").value) || 1 }])
+        .then(() => { if (my === gen) advance(); done(); })
+        .catch((e) => {
+          if (my !== gen) return;
+          if (e?.code === "stopped") { outstanding = 0; claudeStarts = []; return; }
+          // Claude voice unavailable or over its allowance: switch this phone to its own voice.
+          lsSet("engine", "phone"); renderEngines();
+          toast("Claude's voice isn't available right now. Using the phone's voice.");
+          pending = [...chunk, ...pending]; outstanding = 0; claudeStarts = []; pump();
+        });
+    } else if (synth) {
+      const u = new SpeechSynthesisUtterance(text);
+      const v = phoneVoice();
+      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = "en-US"; }
+      u.rate = (parseFloat($("rateSel").value) || 1) * 0.96;
+      u.pitch = 1;
+      u.onstart = () => markSpoken(nid, first);
+      u.onend = done; u.onerror = done;
+      synth.speak(u);
+    } else { outstanding--; }
+  }
+
   function markSpoken(nid, idx) {
     if (!state.current || state.current.id !== nid) return;
     document.querySelectorAll("#nowText span.cur").forEach((s) => s.classList.remove("cur"));
@@ -265,36 +352,47 @@
   function playCurrent() {
     const cur = state.current;
     if (!audioOn || !cur) return;
-    if (cur.id !== playingId) { synth.cancel(); playingId = cur.id; spokenIdx = 0; }
-    if (cur.stopped) { synth.cancel(); spokenIdx = cur.sentences.length; return; }
-    while (spokenIdx < cur.sentences.length) { speak(cur.sentences[spokenIdx], spokenIdx, cur.id); spokenIdx++; }
+    if (cur.id !== playingId) { resetAudio(); playingId = cur.id; spokenIdx = 0; }
+    if (cur.stopped) { resetAudio(); spokenIdx = cur.sentences.length; return; }
+    while (spokenIdx < cur.sentences.length) { pending.push({ text: cur.sentences[spokenIdx], idx: spokenIdx }); spokenIdx++; }
+    pump();
   }
 
   let wakeLock = null;
   async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
   document.addEventListener("visibilitychange", () => { if (audioOn && document.visibilityState === "visible") keepAwake(); });
 
-  $("audioBtn").onclick = () => {
-    if (!synth) return;
-    if (!audioOn) {
-      // Speaking inside the tap unlocks audio on iPhone.
-      const u = new SpeechSynthesisUtterance("Audio is on. You'll hear the guide here.");
-      const v = voices.find((x) => x.voiceURI === $("voiceSel").value); if (v) { u.voice = v; u.lang = v.lang; }
+  function sayTest() {
+    // Must run inside a tap: this is what unlocks audio on phones.
+    const line = "Audio is on. You'll hear the guide here.";
+    if (engine() === "claude") {
+      tts.speak([{ text: line, voice: $("voiceSel").value || "buttery", language: "en" }]).catch(() => {});
+    } else if (synth) {
+      const u = new SpeechSynthesisUtterance(line); const v = phoneVoice();
+      if (v) { u.voice = v; u.lang = v.lang; } u.rate = (parseFloat($("rateSel").value) || 1) * 0.96;
       synth.speak(u);
-      audioOn = true;
+    }
+  }
+
+  $("audioBtn").onclick = () => {
+    if (!synth && !tts) return;
+    if (!audioOn) {
+      audioOn = true; sayTest();
       // Join at the live point so everyone stays in sync.
       playingId = state.current?.id ?? null; spokenIdx = state.current?.sentences?.length ?? 0;
       keepAwake();
-    } else { audioOn = false; synth.cancel(); }
+    } else { audioOn = false; resetAudio(); }
     renderAudio();
   };
-  $("muteBtn").onclick = () => { muted = !muted; if (muted) synth?.cancel(); renderAudio(); };
+  $("muteBtn").onclick = () => { muted = !muted; if (muted) resetAudio(); renderAudio(); };
   $("replayBtn").onclick = () => {
-    if (!synth || !state.current) return;
+    if (!state.current) return;
     if (!audioOn) { audioOn = true; keepAwake(); }
-    muted = false; synth.cancel(); playingId = state.current.id; spokenIdx = 0; playCurrent(); renderAudio();
+    muted = false; resetAudio(); playingId = state.current.id; spokenIdx = 0; playCurrent(); renderAudio();
   };
   function renderAudio() {
+    $("audioBtn").disabled = !synth && !tts;
+    if (!synth && !tts) $("audioHint").textContent = "This browser can't read text aloud. Open the link in Safari or Chrome.";
     $("audioBtn").textContent = audioOn ? "Audio on · tap to turn off" : "Turn on audio";
     $("audioBtn").classList.toggle("primary", !audioOn);
     $("muteBtn").hidden = !audioOn; $("muteBtn").textContent = muted ? "Unmute" : "Mute";
@@ -408,7 +506,7 @@ It is ${tokyoNow()} in Kyoto. Use the season and time of day where it helps.
 Today's route: Nijo Castle, Nishiki Market, Pontocho, the Shijo bridge and Minamiza, Gion (Shirakawa and Hanamikoji), Yasaka Shrine and Maruyama Park, Nene-no-michi and Kodaiji, Ninenzaka and Sannenzaka, Kiyomizu-dera.
 Already covered on this walk: ${recap()}
 Style: warm, vivid and conversational, like the best local guide. Tell stories about people. Point at things they can see right now ("look up at the eaves").
-Speech rules: plain spoken sentences only. No lists, headings, markdown, emoji or parentheses. Write Japanese names in simple romaji without macrons (Kodaiji, Nijo, Shijo). Never invent prices, opening hours or precise figures you are unsure of; say roughly or leave them out. Don't repeat what was already covered. No greeting or sign-off. Output only the words to be spoken.`;
+Write for the ear: mostly short and medium sentences with natural rhythm, the way a person talks. Speech rules: plain spoken sentences only. No lists, headings, markdown, emoji or parentheses. Write Japanese names in simple romaji without macrons (Kodaiji, Nijo, Shijo). Never invent prices, opening hours or precise figures you are unsure of; say roughly or leave them out. Don't repeat what was already covered. No greeting or sign-off. Output only the words to be spoken.`;
   }
   const words = () => ($("shortSw").checked ? 110 : 210);
   function stopPrompt(s) {
@@ -506,7 +604,7 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   $("stopBtn").onclick = () => {
     if (!live) return;
     ctl?.abort(); live.stopped = true; live.done = true; state.current = live; quietAt = 0;
-    synth?.cancel(); renderNow(); pushState();
+    resetAudio(); renderNow(); pushState();
   };
   $("clearBtn").onclick = async () => {
     const old = questions.filter((q) => q.status === "answered" || q.status === "skipped");
@@ -529,8 +627,7 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   // Answer queued questions when the guide is quiet.
   setInterval(() => {
     if (!isBrain() || busy || !$("autoSw").checked) return;
-    const speaking = audioOn && synth && (synth.speaking || synth.pending);
-    if (speaking || Date.now() < quietAt) return;
+    if (isSpeaking() || Date.now() < quietAt) return;
     const q = questions.find((x) => x.status === "queued");
     if (q) answer(q);
   }, 1500);
@@ -568,7 +665,8 @@ Speak about ${words()} words. End with one specific thing to look for or do here
   const conn = (txt, cls) => { const c = $("conn"); c.textContent = txt; c.className = "pill " + (cls || ""); };
   (async () => {
     const timer = setTimeout(() => { if (!db) conn("Offline", "bad"); }, 10000);
-    [db, sample, user] = await Promise.all([claude.use("db"), claude.use("sample"), claude.use("user")]);
+    [db, sample, user, tts] = await Promise.all([claude.use("db"), claude.use("sample"), claude.use("user"), claude.use("tts")]);
+    renderEngines(); renderAudio();
     clearTimeout(timer);
     if (!db) { conn("Sign in to join", "bad"); $("nowText").textContent = "Open this link on claude.ai while signed in to hear the tour."; return; }
     try { canEdit = !!(await user?.canEdit()); } catch { canEdit = false; }
@@ -598,6 +696,6 @@ Speak about ${words()} words. End with one specific thing to look for or do here
     }, () => {});
   })();
 
-  renderAudio(); renderStops();
+  renderEngines(); renderAudio(); renderStops();
 })();
 </script>
